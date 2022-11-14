@@ -1,0 +1,15 @@
+Package: spikeyglass
+Title: Implements Spike-and-slab Joint Graphical Lasso
+Version: 0.0.0.9000
+Authors@R: 
+    person("Margaret", "Janiczek", , "mjaniczek@umass.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
