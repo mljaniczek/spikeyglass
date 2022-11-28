@@ -7,7 +7,7 @@
 \format{
 \subsection{\code{simdat}}{
 
-A list with 3 matrices each with 150 rows and 100 columns:
+A list with 3 matrices each with 150 rows and 50 columns:
 \describe{
 \item{V1:V100}{Data generated from multivariate normal with prespecified
 block structure for each of the 3 groups}

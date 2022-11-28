@@ -8,7 +8,7 @@
 # G <- 3
 #
 # ## Specify N, P
-# p <- 100
+# p <- 50
 # N <- rep(150, G)
 # # smaller block dimension
 # p0 <- p/10

@@ -20,15 +20,33 @@ data("simdat")
 ```
 
 ```{r}
+# TODO visualizations of simdat 
+# TODO summarize SIMDAT
+# TODO FGL
+```
+
+
+```{r}
 ## Fig SSJGL
-p <- 100
+set.seed(1219)
+G <- 3
+p <- 50
 penalty <- "fused"
 lam1 <- 1
 lam2 <- 1
 v1 <- 1
 lam.eff <- lam1 + c(1:10) * 5
 v0s <- lam1/lam.eff
-fit1 = ssjgl(Y=simdat,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s, tol.em=1E-4, a=1, b=p, doubly=TRUE, normalize=TRUE)
+g <- simdat$g
+
+# takes 4 minutes to run the below
+fit1 = ssjgl(Y=simdat$Y,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s, tol.em=1E-4, a=1, b=p, doubly=TRUE, normalize=TRUE)
+
+
+
+# saving since it takes so long
+#save(fit1, file = here::here("data/fit1.Rdata"))
+
 
 ## Calculate metrics for SSJGL
 fit1$nedges <- fit1$SSE <- fit1$fp <- fit1$tp <- fit1$fn <- fit1$tn <- fit1$dKL <- fit1$L1 <- matrix(NA, length(lam.eff), G)
