@@ -1,7 +1,7 @@
-## code to prepare `simdat` dataset goes here
-
-# usethis::use_data(simdat, overwrite = TRUE)
+# ## code to prepare `simdat` dataset goes here
 #
+# # usethis::use_data(simdat, overwrite = TRUE)
+# #
 # library(BDgraph)
 #
 # set.seed(1)
@@ -39,10 +39,10 @@
 # # 			layout = layout.fruchterman.reingold,
 # #             vertex.size = 2, vertex.label = NA, vertex.color=V(graph.plot)$color)
 #
-# g[[1]] <- s1
-# g[[2]] <- s2
-# g[[3]] <- s3
-#
+# # g[[1]] <- s1
+# # g[[2]] <- s2
+# # g[[3]] <- s3
+# #
 # # Simulate from G-Wishart
 # Theta <- Sigma <- NULL
 # result = .C("rgwish_c", as.integer(s1), as.double(chol(diag(p))),
@@ -75,7 +75,7 @@
 # Y[[1]] <- rmvnorm(n = N[1], mean = rep(0, p), sigma = Sigma[[1]])
 # Y[[2]] <- rmvnorm(n = N[2], mean = rep(0, p), sigma = Sigma[[2]])
 # Y[[3]] <- rmvnorm(n = N[3], mean = rep(0, p), sigma = Sigma[[3]])
-#
-# simdat <- Y
-#
-# usethis::use_data(simdat, overwrite = TRUE)
+# #
+# simdat <- list(Y = Y, g = g)
+# #
+#  usethis::use_data(simdat, overwrite = TRUE)

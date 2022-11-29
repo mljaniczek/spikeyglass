@@ -40,7 +40,7 @@ v0s <- lam1/lam.eff
 g <- simdat$g
 
 # takes 4 minutes to run the below
-fit1 = ssjgl(Y=simdat$Y,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s, tol.em=1E-4, a=1, b=p, doubly=TRUE, normalize=TRUE)
+fit1 = ssjgl(Y=simdat$Y,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s, tol.em=1E-4, a=1, b=1, doubly=TRUE, normalize=TRUE)
 
 
 
@@ -73,5 +73,7 @@ for(i in 1:length(v0s)){
 	fit1$fn.diff[i] <- met2$fn.diff
 	cat(".")
 }
+
+summary(fit1)
 ```
 

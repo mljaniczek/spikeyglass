@@ -7,7 +7,7 @@
 <!-- badges: end -->
 
 The goal of spikeyglass is to implement the method Bayesian
-Spike-and-Slab Joint Graphical Lasso (SSJGL) into an easy-to-use R
+Spike-and-Slab Joint Graphical Lasso (SSJGL) in an easy-to-use R
 package.
 
 Method paper:
@@ -30,4 +30,14 @@ You can install the development version of spikeyglass from
 ``` r
 # install.packages("devtools")
 devtools::install_github("mljaniczek/spikeyglass")
+```
+
+## Basic usage
+
+Input list of sample by feature matrices (one matrix for each group),
+specify group or fused penalty, and specify priors for simultaneous
+shrinkage and model selection.
+
+``` r
+fit1 <- ssjgl(data,penalty,lambda0, lambda1,lambda2, doubly=TRUE, normalize=TRUE)
 ```

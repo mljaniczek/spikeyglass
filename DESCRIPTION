@@ -1,10 +1,18 @@
 Package: spikeyglass
-Title: Implements Spike-and-slab Joint Graphical Lasso
+Title: Bayesian Joint Spike-and-slab Graphical Lasso
 Version: 0.0.0.9000
 Authors@R: 
-    person("Margaret", "Janiczek", , "mjaniczek@umass.edu", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+    c(person(given = "Zehang",
+            middle = "Richard",
+           family = "Li",
+           role = c("aut"),
+           email = "lizehang@gmail.com"),
+      person(given = "Margaret",
+           family = "Janiczek",
+           role = c("aut", "cre"),
+           email = "mjaniczek@umass.edu")
+           )
+Description: Package implementing the method Bayesian joint spike-and-slab graphical lasso to infer multiple Gaussian graphical models in R. Bayesian treatments of group graphical lasso and fused graphical lasso.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
