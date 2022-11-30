@@ -32,12 +32,5 @@ You can install the development version of spikeyglass from
 devtools::install_github("mljaniczek/spikeyglass")
 ```
 
-## Basic usage
-
-Input list of sample by feature matrices (one matrix for each group),
-specify group or fused penalty, and specify priors for simultaneous
-shrinkage and model selection.
-
-``` r
-fit1 <- ssjgl(data,penalty,lambda0, lambda1,lambda2, doubly=TRUE, normalize=TRUE)
-```
+Learn more in `vignette("ssjgl", package = "spikeyglass")` or
+`?spikeyglass`.
