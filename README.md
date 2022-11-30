@@ -31,6 +31,3 @@ You can install the development version of spikeyglass from
 # install.packages("devtools")
 devtools::install_github("mljaniczek/spikeyglass")
 ```
-
-Learn more in `vignette("ssjgl", package = "spikeyglass")` or
-`?spikeyglass`.
