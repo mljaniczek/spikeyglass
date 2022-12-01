@@ -2,8 +2,7 @@ Package: spikeyglass
 Title: Bayesian Joint Spike-and-slab Graphical Lasso
 Version: 0.0.0.9000
 Authors@R: 
-    c(person(given = "Zehang",
-            middle = "Richard",
+    c(person(given = "Zehang Richard",
            family = "Li",
            role = c("aut"),
            email = "lizehang@gmail.com"),
@@ -26,3 +25,4 @@ Config/testthat/edition: 3
 Depends: 
     R (>= 2.10)
 LazyData: true
+URL: https://mljaniczek.github.io/spikeyglass/
