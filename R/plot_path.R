@@ -70,39 +70,41 @@ plot_path <- function(v0s, obj, G, thres = 0.5, normalize = FALSE,
     plot(v0s, rep(0, length(v0s)), ylim = ylim, col = "white", xlab = xlab,
          main = main[k], ylab = ylab, xlim = xlim, ...)
     if(!is.null(vline)) abline(v = v0s[vline], col = "darkblue", lty = 2)
-browser()
-    M <- dim(G[[k]])[1]
+#browser()
+   # M <- dim(G[[k]])[1]
+    M <- dim(obj$thetalist[[1]][[1]])[1]
 
-    if(1 %in% only && which.top == 0){
+
+    # if(1 %in% only && which.top == 0){
+    #   for(i in 2:M){
+    #     for(j in 1:(i-1)){
+    #       if(G[[k]][i, j] != 0){
+    #         lines(v0s, omega[i, j, ], type = "b", col = color1,
+    #               cex=cex, pch = 20)
+    #       }
+    #     }
+    #   }
+    # }
+    #if(0 %in% only){
       for(i in 2:M){
         for(j in 1:(i-1)){
-          if(G[[k]][i, j] != 0){
-            lines(v0s, omega[i, j, ], type = "b", col = color1,
-                  cex=cex, pch = 20)
-          }
-        }
-      }
-    }
-    if(0 %in% only){
-      for(i in 2:M){
-        for(j in 1:(i-1)){
-          if(G[[k]][i, j] == 0 && sum(abs(omega[i,j,])) > 0){
+         # if(G[[k]][i, j] == 0 && sum(abs(omega[i,j,])) > 0){
             # if(G[[k]][i, j] == 0 ){
-            lines(v0s, omega[i, j, ], type = "b", col = color0, lty = 4,
+            lines(v0s, omega[i, j, ], type = "b", col = color1, lty = 4,
                   cex=cex, pch = 20)
-          }
+          #}
         }
       }
-    }
-    if(1 %in% only && which.top == 1){
-      for(i in 2:M){
-        for(j in 1:(i-1)){
-          if(G[[k]][i, j] != 0){
-            lines(v0s, omega[i, j, ], type = "b", col = color1, cex=cex, pch = 20)
-          }
-        }
-      }
-    }
+    #}
+    # if(1 %in% only && which.top == 1){
+    #   for(i in 2:M){
+    #     for(j in 1:(i-1)){
+    #       if(G[[k]][i, j] != 0){
+    #         lines(v0s, omega[i, j, ], type = "b", col = color1, cex=cex, pch = 20)
+    #       }
+    #     }
+    #   }
+    # }
     if(0 %in% only && 1 %in% only){
       if(position != "none") legend(position, lty = c(1, 4), pch= c(20, 20),
                                     col = c(color1, color0), c("Edge", "Non-edge"))

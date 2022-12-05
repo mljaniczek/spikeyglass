@@ -205,5 +205,6 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
 
   out <- list(thetalist = trace_theta, pilist = trace_pi1, pilist = trace_pi2, fitlist = trace_fit, itrlist = trace_itr, problist1 = trace_prob, penlist1 = trace_d, problist2 = trace_prob_si, penlist2 = trace_d_si, timelist = time,
               imputed = imputed, missed = missed)
+  class(out) = "ssjgl"
   return(out)
 }
