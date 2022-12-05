@@ -2,4 +2,5 @@
 
 export(getdiffmetric)
 export(getmetric)
+export(plot_path)
 export(ssjgl)
