@@ -3,7 +3,7 @@ pkgdown: 2.0.6
 pkgdown_sha: ~
 articles:
   ssjgl: ssjgl.html
-last_built: 2022-12-05T19:08Z
+last_built: 2022-12-05T19:20Z
 urls:
   reference: https://mljaniczek.github.io/spikeyglass/reference
   article: https://mljaniczek.github.io/spikeyglass/articles
