@@ -6,15 +6,32 @@
 #'
 #' @param v0s list of v0 input
 #' @param obj object created using ssjgl
+#' @param thres default threshold for probability of edge inclusion
+#' @param normalize True or False (default False) on if normalized covariance should be returned
+#' @param xlab String for xlab. Default empty.
+#' @param ylab string for y-axis label. Default empty.
+#' @param ylim default NULL and will calculate from range
+#' @param main string for main title. Default empty.
+#' @param par default c(1,2) to list layout of output plots
+#' @param reverse Default FALSE. If want to reverse direction of plot.
+#' @param position Default "bottomright". For position of legend.
+#' @param ... other parameters passed in to base plot
 #' @return plot
 #' @export
 
-plot_path <- function(v0s, obj, G, thres = 0.5, normalize = FALSE,
-                      xlab="", ylab = "", main = "", par = c(1, 2),
+plot_path <- function(v0s, obj, thres = 0.5, normalize = FALSE,
+                      xlab="", ylab = "", main = "",
+                     par = c(1, 2),
                       ylim = NULL, reverse=FALSE, position="bottomright",
-                      only = NULL, color0 = "gray70", color1 = "darkblue",
-                      which.top = c(0,1)[2], cex=.5, cex.xlab=1, cex.ylab=1,
-                      vline = NULL, ...){
+                       ...){
+  only = NULL
+  color0 = "gray70"
+  color1 = "darkblue"
+  which.top = c(0,1)[2]
+  cex=.5
+  cex.xlab=1
+  cex.ylab=1
+  vline = NULL
   NV <- length(obj$thetalist)
   K <- length(obj$thetalist[[1]])
   P <- dim(obj$thetalist[[1]][[1]])[1]

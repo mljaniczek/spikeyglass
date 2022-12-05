@@ -28,8 +28,10 @@ LazyData: true
 URL: https://mljaniczek.github.io/spikeyglass/
 Imports: 
     BDgraph,
+    graphics,
     Hmisc,
     igraph,
     JGL,
     MASS,
-    reshape
+    reshape,
+    stats

@@ -7,7 +7,6 @@
 plot_path(
   v0s,
   obj,
-  G,
   thres = 0.5,
   normalize = FALSE,
   xlab = "",
@@ -17,14 +16,6 @@ plot_path(
   ylim = NULL,
   reverse = FALSE,
   position = "bottomright",
-  only = NULL,
-  color0 = "gray70",
-  color1 = "darkblue",
-  which.top = c(0, 1)[2],
-  cex = 0.5,
-  cex.xlab = 1,
-  cex.ylab = 1,
-  vline = NULL,
   ...
 )
 }
@@ -32,6 +23,26 @@ plot_path(
 \item{v0s}{list of v0 input}
 
 \item{obj}{object created using ssjgl}
+
+\item{thres}{default threshold for probability of edge inclusion}
+
+\item{normalize}{True or False (default False) on if normalized covariance should be returned}
+
+\item{xlab}{String for xlab. Default empty.}
+
+\item{ylab}{string for y-axis label. Default empty.}
+
+\item{main}{string for main title. Default empty.}
+
+\item{par}{default c(1,2) to list layout of output plots}
+
+\item{ylim}{default NULL and will calculate from range}
+
+\item{reverse}{Default FALSE. If want to reverse direction of plot.}
+
+\item{position}{Default "bottomright". For position of legend.}
+
+\item{...}{other parameters passed in to base plot}
 }
 \value{
 plot
