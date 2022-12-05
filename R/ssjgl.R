@@ -8,15 +8,15 @@
 #' @param v1 edgewise penalties
 #' @param v0s edgewise penalties
 #' @param doubly True or False
-#' @param rho ? default as 1
+#' @param rho default as 1
 #' @param a initializing parameters
 #' @param b initializing parameters
 #' @param maxitr.em max iterations of EM algorithm. Default 500
-#' @param tol.em default 1e-4 - ? not sure what means
-#' @param maxitr.jgl max iterations for jgl. default 500
-#' @param tol.jgl default 1e-4 - ? not sure what means
-#' @param warm  ?
-#' @param warm.connected ?
+#' @param tol.em default 1e-4 ADD MORE
+#' @param maxitr.jgl max iterations for JGL. default 500
+#' @param tol.jgl default 1e-4 ADD MORE
+#' @param warm default NULL. warming parameter for M step
+#' @param warm.connected parameter for M-step
 #' @param truncate cutoff to truncate default 1e-5
 #' @param normalize True or False
 #' @param c constant. Default 0.1
