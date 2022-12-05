@@ -77,7 +77,19 @@
 <code class="sourceCode R"><span><span class="co"># TODO visualizations of simdat </span></span>
 <span><span class="co"># TODO summarize SIMDAT</span></span>
 <span><span class="co"># TODO FGL</span></span></code></pre></div>
+<p>The simulated data has 50 variables, and for the three groups there
+are some common graph structure with blocks of 5 variables being removed
+in the 2nd and 3rd group - see below.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/heatmap.html" class="external-link">heatmap</a></span><span class="op">(</span><span class="va">simdat</span><span class="op">$</span><span class="va">g</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, Rowv <span class="op">=</span> <span class="cn">NA</span>, Colv <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ssjgl_files/figure-html/unnamed-chunk-3-1.png" width="700"></p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/heatmap.html" class="external-link">heatmap</a></span><span class="op">(</span><span class="va">simdat</span><span class="op">$</span><span class="va">g</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span>, Rowv <span class="op">=</span> <span class="cn">NA</span>, Colv <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ssjgl_files/figure-html/unnamed-chunk-3-2.png" width="700"></p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/heatmap.html" class="external-link">heatmap</a></span><span class="op">(</span><span class="va">simdat</span><span class="op">$</span><span class="va">g</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span>, Rowv <span class="op">=</span> <span class="cn">NA</span>, Colv <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ssjgl_files/figure-html/unnamed-chunk-3-3.png" width="700"></p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## Fig SSJGL</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1219</span><span class="op">)</span></span>
 <span><span class="va">G</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
@@ -91,88 +103,69 @@
 <span><span class="va">g</span> <span class="op">&lt;-</span> <span class="va">simdat</span><span class="op">$</span><span class="va">g</span></span>
 <span></span>
 <span><span class="co"># takes 4 minutes to run the below</span></span>
-<span><span class="va">fit1</span> <span class="op">=</span> <span class="fu"><a href="../reference/ssjgl.html">ssjgl</a></span><span class="op">(</span>Y<span class="op">=</span><span class="va">simdat</span><span class="op">$</span><span class="va">Y</span>,penalty<span class="op">=</span><span class="va">penalty</span>,lambda0<span class="op">=</span><span class="fl">1</span>, lambda1<span class="op">=</span><span class="va">lam1</span>,lambda2<span class="op">=</span><span class="va">lam2</span>, v1 <span class="op">=</span> <span class="va">v1</span>, v0s <span class="op">=</span> <span class="va">v0s</span>, tol.em<span class="op">=</span><span class="fl">1E-4</span>, a<span class="op">=</span><span class="fl">1</span>, b<span class="op">=</span><span class="fl">1</span>, doubly<span class="op">=</span><span class="cn">TRUE</span>, normalize<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.303881  p.slab1: 0.0225  p.slab2: 0.0038555505</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 0.129505  p.slab1: 0.0206  p.slab2: 0.0033346865</span></span>
-<span><span class="co">#&gt; Itr 4  Difference: 0.002032  p.slab1: 0.0205  p.slab2: 0.0032669602</span></span>
-<span><span class="co">#&gt; Itr 5  Difference: 8.7e-05  p.slab1: 0.0205  p.slab2: 0.0032664025</span></span>
-<span><span class="co">#&gt; Ladder= 1 v0 = 0.16667 done. Time: 48</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.185811  p.slab1: 0.0234  p.slab2: 0.0046568425</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 0.000955  p.slab1: 0.0229  p.slab2: 0.004081511</span></span>
-<span><span class="co">#&gt; Itr 4  Difference: 1.2e-05  p.slab1: 0.0228  p.slab2: 0.0040814749</span></span>
-<span><span class="co">#&gt; Ladder= 2 v0 = 0.09091 done. Time: 38</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.077394  p.slab1: 0.0254  p.slab2: 0.0070593472</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 0.135068  p.slab1: 0.0244  p.slab2: 0.0055843993</span></span>
-<span><span class="co">#&gt; Itr 4  Difference: 0.000553  p.slab1: 0.0241  p.slab2: 0.0048979845</span></span>
-<span><span class="co">#&gt; Itr 5  Difference: 0.00115  p.slab1: 0.024  p.slab2: 0.0048979809</span></span>
-<span><span class="co">#&gt; Itr 6  Difference: 0.005393  p.slab1: 0.0237  p.slab2: 0.0048979806</span></span>
-<span><span class="co">#&gt; Itr 7  Difference: 0.00127  p.slab1: 0.0236  p.slab2: 0.0048979805</span></span>
-<span><span class="co">#&gt; Itr 8  Difference: 2e-06  p.slab1: 0.0236  p.slab2: 0.0048979805</span></span>
-<span><span class="co">#&gt; Ladder= 3 v0 = 0.0625 done. Time: 74</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.072611  p.slab1: 0.0264  p.slab2: 0.0094596903</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 0.051723  p.slab1: 0.0261  p.slab2: 0.0078431904</span></span>
-<span><span class="co">#&gt; Itr 4  Difference: 1e-06  p.slab1: 0.0261  p.slab2: 0.0073420099</span></span>
-<span><span class="co">#&gt; Ladder= 4 v0 = 0.04762 done. Time: 38</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.034365  p.slab1: 0.0269  p.slab2: 0.0110431401</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 0.037873  p.slab1: 0.0263  p.slab2: 0.0088065601</span></span>
-<span><span class="co">#&gt; Itr 4  Difference: 0.000192  p.slab1: 0.0261  p.slab2: 0.0081624244</span></span>
-<span><span class="co">#&gt; Itr 5  Difference: 1e-06  p.slab1: 0.0261  p.slab2: 0.0081622469</span></span>
-<span><span class="co">#&gt; Ladder= 5 v0 = 0.03846 done. Time: 47</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.017092  p.slab1: 0.0261  p.slab2: 0.0113072444</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 0.016729  p.slab1: 0.0261  p.slab2: 0.0100672505</span></span>
-<span><span class="co">#&gt; Itr 4  Difference: 0.010053  p.slab1: 0.0261  p.slab2: 0.0089785062</span></span>
-<span><span class="co">#&gt; Itr 5  Difference: 6e-06  p.slab1: 0.0261  p.slab2: 0.0089756748</span></span>
-<span><span class="co">#&gt; Ladder= 6 v0 = 0.03226 done. Time: 44</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.017255  p.slab1: 0.0261  p.slab2: 0.0136206283</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 0.007968  p.slab1: 0.0261  p.slab2: 0.01144327</span></span>
-<span><span class="co">#&gt; Itr 4  Difference: 5.6e-05  p.slab1: 0.0261  p.slab2: 0.0114231271</span></span>
-<span><span class="co">#&gt; Ladder= 7 v0 = 0.02778 done. Time: 28</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.015981  p.slab1: 0.0261  p.slab2: 0.0140191465</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 0.010154  p.slab1: 0.0261  p.slab2: 0.0127904439</span></span>
-<span><span class="co">#&gt; Itr 4  Difference: 0  p.slab1: 0.0261  p.slab2: 0.0122446562</span></span>
-<span><span class="co">#&gt; Ladder= 8 v0 = 0.02439 done. Time: 30</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.015985  p.slab1: 0.0261  p.slab2: 0.0148970582</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 0.00178  p.slab1: 0.0261  p.slab2: 0.0138282334</span></span>
-<span><span class="co">#&gt; Itr 4  Difference: 0.006541  p.slab1: 0.0261  p.slab2: 0.013062616</span></span>
-<span><span class="co">#&gt; Itr 5  Difference: 0.004546  p.slab1: 0.0261  p.slab2: 0.0129998172</span></span>
-<span><span class="co">#&gt; Itr 6  Difference: 0.002955  p.slab1: 0.0261  p.slab2: 0.0122452399</span></span>
-<span><span class="co">#&gt; Itr 7  Difference: 0  p.slab1: 0.0261  p.slab2: 0.0122448839</span></span>
-<span><span class="co">#&gt; Ladder= 9 v0 = 0.02174 done. Time: 53</span></span>
-<span><span class="co">#&gt; Itr 2  Difference: 0.015985  p.slab1: 0.0261  p.slab2: 0.0153862364</span></span>
-<span><span class="co">#&gt; Itr 3  Difference: 2e-06  p.slab1: 0.0261  p.slab2: 0.0146912026</span></span>
-<span><span class="co">#&gt; Ladder= 10 v0 = 0.01961 done. Time: 20</span></span>
+<span><span class="va">fit1</span> <span class="op">=</span> <span class="fu"><a href="../reference/ssjgl.html">ssjgl</a></span><span class="op">(</span>Y<span class="op">=</span><span class="va">simdat</span><span class="op">$</span><span class="va">Y</span>,penalty<span class="op">=</span><span class="va">penalty</span>,lambda0<span class="op">=</span><span class="fl">1</span>, lambda1<span class="op">=</span><span class="va">lam1</span>,lambda2<span class="op">=</span><span class="va">lam2</span>, v1 <span class="op">=</span> <span class="va">v1</span>, v0s <span class="op">=</span> <span class="va">v0s</span>, tol.em<span class="op">=</span><span class="fl">1E-4</span>, a<span class="op">=</span><span class="fl">1</span>, b<span class="op">=</span><span class="va">p</span>, doubly<span class="op">=</span><span class="cn">TRUE</span>, normalize<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.107682  p.slab1: 0.0198  p.slab2: 0.003246778</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 0.00155  p.slab1: 0.0199  p.slab2: 0.0032027127</span></span>
+<span><span class="co">#&gt; Itr 4  Difference: 0.000163  p.slab1: 0.02  p.slab2: 0.0032023583</span></span>
+<span><span class="co">#&gt; Itr 5  Difference: 5.5e-05  p.slab1: 0.0201  p.slab2: 0.003202323</span></span>
+<span><span class="co">#&gt; Ladder= 1 v0 = 0.16667 done. Time: 44</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.185811  p.slab1: 0.0224  p.slab2: 0.0043147597</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 4e-06  p.slab1: 0.0224  p.slab2: 0.0040014608</span></span>
+<span><span class="co">#&gt; Ladder= 2 v0 = 0.09091 done. Time: 27</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.071392  p.slab1: 0.0234  p.slab2: 0.0051659543</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 0.09814  p.slab1: 0.0232  p.slab2: 0.0041793958</span></span>
+<span><span class="co">#&gt; Itr 4  Difference: 2e-06  p.slab1: 0.0232  p.slab2: 0.0040016203</span></span>
+<span><span class="co">#&gt; Ladder= 3 v0 = 0.0625 done. Time: 35</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.073888  p.slab1: 0.0258  p.slab2: 0.0077700599</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 0.040915  p.slab1: 0.0256  p.slab2: 0.0065586749</span></span>
+<span><span class="co">#&gt; Itr 4  Difference: 1e-06  p.slab1: 0.0256  p.slab2: 0.006396565</span></span>
+<span><span class="co">#&gt; Ladder= 4 v0 = 0.04762 done. Time: 35</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.050898  p.slab1: 0.0263  p.slab2: 0.0104252343</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 0.022445  p.slab1: 0.0257  p.slab2: 0.0072026046</span></span>
+<span><span class="co">#&gt; Itr 4  Difference: 1.7e-05  p.slab1: 0.0256  p.slab2: 0.0072018401</span></span>
+<span><span class="co">#&gt; Ladder= 5 v0 = 0.03846 done. Time: 35</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.01096  p.slab1: 0.0256  p.slab2: 0.0104926555</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 0.028619  p.slab1: 0.0256  p.slab2: 0.0097160704</span></span>
+<span><span class="co">#&gt; Itr 4  Difference: 0.001476  p.slab1: 0.0256  p.slab2: 0.0088003402</span></span>
+<span><span class="co">#&gt; Itr 5  Difference: 6e-06  p.slab1: 0.0256  p.slab2: 0.0087993529</span></span>
+<span><span class="co">#&gt; Ladder= 6 v0 = 0.03226 done. Time: 40</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.014845  p.slab1: 0.0256  p.slab2: 0.0114616685</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 0.001442  p.slab1: 0.0256  p.slab2: 0.0104008799</span></span>
+<span><span class="co">#&gt; Itr 4  Difference: 0.00012  p.slab1: 0.0256  p.slab2: 0.0103970523</span></span>
+<span><span class="co">#&gt; Itr 5  Difference: 0.003389  p.slab1: 0.0256  p.slab2: 0.0103763465</span></span>
+<span><span class="co">#&gt; Itr 6  Difference: 0.008073  p.slab1: 0.0256  p.slab2: 0.009611815</span></span>
+<span><span class="co">#&gt; Itr 7  Difference: 0  p.slab1: 0.0256  p.slab2: 0.0096033848</span></span>
+<span><span class="co">#&gt; Ladder= 7 v0 = 0.02778 done. Time: 47</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.015802  p.slab1: 0.0256  p.slab2: 0.0121005215</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 0.009708  p.slab1: 0.0256  p.slab2: 0.0108477726</span></span>
+<span><span class="co">#&gt; Itr 4  Difference: 0  p.slab1: 0.0256  p.slab2: 0.0104039923</span></span>
+<span><span class="co">#&gt; Ladder= 8 v0 = 0.02439 done. Time: 28</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.031038  p.slab1: 0.0256  p.slab2: 0.0140251726</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 0.002861  p.slab1: 0.0256  p.slab2: 0.0135453354</span></span>
+<span><span class="co">#&gt; Itr 4  Difference: 0.004681  p.slab1: 0.0256  p.slab2: 0.0127927675</span></span>
+<span><span class="co">#&gt; Itr 5  Difference: 0.007981  p.slab1: 0.0256  p.slab2: 0.0127076316</span></span>
+<span><span class="co">#&gt; Itr 6  Difference: 0.00025  p.slab1: 0.0256  p.slab2: 0.0120047897</span></span>
+<span><span class="co">#&gt; Itr 7  Difference: 0  p.slab1: 0.0256  p.slab2: 0.0120047878</span></span>
+<span><span class="co">#&gt; Ladder= 9 v0 = 0.02174 done. Time: 49</span></span>
+<span><span class="co">#&gt; Itr 2  Difference: 0.015984  p.slab1: 0.0256  p.slab2: 0.0142713681</span></span>
+<span><span class="co">#&gt; Itr 3  Difference: 3e-06  p.slab1: 0.0256  p.slab2: 0.013602531</span></span>
+<span><span class="co">#&gt; Ladder= 10 v0 = 0.01961 done. Time: 19</span></span>
+<span><span class="co"># </span></span>
+<span><span class="co"># </span></span>
+<span><span class="co"># </span></span>
+<span><span class="co"># # saving since it takes long</span></span>
+<span><span class="co"># save(fit1, file = here::here("data/fit1.Rdata"))</span></span>
+<span></span>
+<span><span class="co"># load(here::here("data/fit1.Rdata"))</span></span>
+<span></span>
+<span><span class="co"># Get plot titles </span></span>
+<span><span class="va">mains</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Class 1"</span><span class="op">)</span>, </span>
+<span>           <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Class 2"</span><span class="op">)</span>, </span>
+<span>           <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Class 3"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span></span>
-<span></span>
-<span><span class="co"># saving since it takes long</span></span>
-<span><span class="co">#save(fit1, file = here::here("data/fit1.Rdata"))</span></span>
-<span></span>
-<span></span>
-<span><span class="co">## Calculate metrics for SSJGL</span></span>
-<span><span class="co"># fit1$nedges &lt;- fit1$SSE &lt;- fit1$fp &lt;- fit1$tp &lt;- fit1$fn &lt;- fit1$tn &lt;- fit1$dKL &lt;- fit1$L1 &lt;- matrix(NA, length(lam.eff), G)</span></span>
-<span><span class="co"># fit1$tp.gdiff &lt;- fit1$fp.gdiff &lt;- fit1$fn.gdiff &lt;- rep(NA, length(lam.eff))</span></span>
-<span><span class="co"># fit1$tp.diff &lt;- fit1$fp.diff &lt;- fit1$fn.diff &lt;- rep(NA, length(lam.eff))</span></span>
-<span><span class="co"># for(i in 1:length(v0s)){</span></span>
-<span><span class="co">#   for(k in 1:G){</span></span>
-<span><span class="co">#       met &lt;- getmetric(est=fit1$thetalist[[i]][[k]], truth=Theta[[k]], graph=g[[k]])</span></span>
-<span><span class="co">#       fit1$nedges[i,k] &lt;- met$nedges</span></span>
-<span><span class="co">#       fit1$SSE[i,k] &lt;- met$SSE</span></span>
-<span><span class="co">#       fit1$fp[i,k] &lt;- met$fp</span></span>
-<span><span class="co">#       fit1$tp[i,k] &lt;- met$tp</span></span>
-<span><span class="co">#       fit1$fn[i,k] &lt;- met$fn</span></span>
-<span><span class="co">#       fit1$tn[i,k] &lt;- met$tn</span></span>
-<span><span class="co">#       fit1$dKL[i,k] &lt;- met$dKL</span></span>
-<span><span class="co">#       fit1$L1[i,k] &lt;- met$L1</span></span>
-<span><span class="co">#   }</span></span>
-<span><span class="co">#   met2 &lt;- getdiffmetric(est=fit1$thetalist[[i]], truth = Theta, graph=g, tol=1e-2)</span></span>
-<span><span class="co">#   fit1$tp.gdiff[i] &lt;- met2$tp.gdiff</span></span>
-<span><span class="co">#   fit1$fp.gdiff[i] &lt;- met2$fp.gdiff</span></span>
-<span><span class="co">#   fit1$fn.gdiff[i] &lt;- met2$fn.gdiff</span></span>
-<span><span class="co">#   fit1$tp.diff[i] &lt;- met2$tp.diff</span></span>
-<span><span class="co">#   fit1$fp.diff[i] &lt;- met2$fp.diff</span></span>
-<span><span class="co">#   fit1$fn.diff[i] &lt;- met2$fn.diff</span></span>
-<span><span class="co">#   cat(".")</span></span>
-<span><span class="co"># }</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/plot_path.html">plot_path</a></span><span class="op">(</span><span class="va">lam1</span><span class="op">/</span><span class="va">v0s</span>, <span class="va">fit1</span>, thres <span class="op">=</span> <span class="fl">0</span>, normalize <span class="op">=</span> <span class="cn">F</span>, xlab <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/expression.html" class="external-link">expression</a></span><span class="op">(</span><span class="va">lambda</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">/</span><span class="va">v</span><span class="op">[</span><span class="fl">0</span><span class="op">]</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>, ylab <span class="op">=</span> <span class="st">"Partial correlations"</span>,  main <span class="op">=</span> <span class="va">mains</span>, par <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ssjgl_files/figure-html/unnamed-chunk-4-1.png" width="700"></p>
   </main>
 </div>
 
