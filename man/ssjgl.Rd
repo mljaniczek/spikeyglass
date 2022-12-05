@@ -45,7 +45,7 @@ ssjgl(
 
 \item{doubly}{True or False}
 
-\item{rho}{? default as 1}
+\item{rho}{default as 1}
 
 \item{a}{initializing parameters}
 
@@ -53,15 +53,15 @@ ssjgl(
 
 \item{maxitr.em}{max iterations of EM algorithm. Default 500}
 
-\item{tol.em}{default 1e-4 - ? not sure what means}
+\item{tol.em}{default 1e-4 ADD MORE}
 
-\item{maxitr.jgl}{max iterations for jgl. default 500}
+\item{maxitr.jgl}{max iterations for JGL. default 500}
 
-\item{tol.jgl}{default 1e-4 - ? not sure what means}
+\item{tol.jgl}{default 1e-4 ADD MORE}
 
-\item{warm}{?}
+\item{warm}{default NULL. warming parameter for M step}
 
-\item{warm.connected}{?}
+\item{warm.connected}{parameter for M-step}
 
 \item{truncate}{cutoff to truncate default 1e-5}
 
