@@ -170,6 +170,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
       if(!is.null(pi_delta_last)){
         diff <- 0
         # diff <- max(abs(pi_delta_last - pi_delta))
+        ###TODO  MJ: double check if the max(diff, (theta_last[[k]] - theta[[k]])^2) is doing the correct thing?
         for(k in 1:length(theta_last)) diff <- max(diff, (theta_last[[k]] - theta[[k]])^2)
         if(doubly){
           cat(paste0("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab1: ", round(pi_delta, 4), "  p.slab2: ", round(pi_xi, 10), "\n"))
@@ -202,8 +203,8 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
     }
     imputed <- imputed + meanj[missed[, 3]]
   }
-
-  out <- list(thetalist = trace_theta, pilist = trace_pi1, pilist = trace_pi2, fitlist = trace_fit, itrlist = trace_itr, problist1 = trace_prob, penlist1 = trace_d, problist2 = trace_prob_si, penlist2 = trace_d_si, timelist = time,
+#MJ change: pilist was previously redundant
+  out <- list(thetalist = trace_theta, pi1list = trace_pi1, pi2list = trace_pi2, fitlist = trace_fit, itrlist = trace_itr, problist1 = trace_prob, penlist1 = trace_d, problist2 = trace_prob_si, penlist2 = trace_d_si, timelist = time,
               imputed = imputed, missed = missed)
   class(out) = "ssjgl"
   return(out)

@@ -37,8 +37,11 @@ heatmap(simdat$g[[3]], Rowv = NA, Colv = NA)
 
 ```{r}
 ## Fig SSJGL
+
+simdat$Y <- simdat$Y[c(1,2)]
+simdat$g <- simdat$g[c(1,2)]
 set.seed(1219)
-G <- 3
+G <- 2
 p <- 50
 penalty <- "fused"
 lam1 <- 1
@@ -48,8 +51,11 @@ lam.eff <- lam1 + c(1:10) * 5
 v0s <- lam1/lam.eff
 g <- simdat$g
 
-# takes 4 minutes to run the below
+# takes 1 minute to run the below
+library(tictoc)
+tic()
 fit1 = ssjgl(Y=simdat$Y,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s, tol.em=1E-4, a=1, b=p, doubly=TRUE, normalize=TRUE)
+toc()
 # 
 # 
 # 
@@ -60,14 +66,51 @@ fit1 = ssjgl(Y=simdat$Y,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1
 
 # Get plot titles 
 mains <- c(paste0("Class 1"), 
-		   paste0("Class 2"), 
-		   paste0("Class 3"))
+		   paste0("Class 2"))
 
 
-plot_path(lam1/v0s, fit1, thres = 0, normalize = F, xlab = expression(lambda[1]/v[0]^2), ylab = "Partial correlations",  main = mains, par = c(1, 3))
+plot_path(lam1/v0s, fit1, thres = 0, normalize = F, xlab = expression(lambda[1]/v[0]^2), ylab = "Partial correlations",  main = mains, par = c(1, 2))
 
 
 ```
+
+
+Now with new v0 selection
+```{r}
+res <- SSJGL_CV_final_pcorCI(
+  Y = simdat$Y,
+  v0s = seq(0.01, 0.0005, length.out = 10),
+  folds = 3,
+  B = 20,
+  ci_level = 0.95,
+  seed = 123,
+  penalty = "fused",
+  lambda0 = 0.1, lambda1 = 0.2, lambda2 = 0.2,
+  normalize = TRUE,
+  impute = TRUE
+)
+
+# # Selected ladder step
+res$cv$v0_best
+res$cv$cv_score
+#
+# # Final partial correlation estimate for group k=1
+pcor_hat_g1 <- res$final$pcor_hat[[1]]
+#
+# # 95% CI matrices for partial correlations (group 1)
+pcor_lo_g1 <- res$final$CI_lower[[1]]
+pcor_hi_g1 <- res$final$CI_upper[[1]]
+
+# TODO make function to use CIs to 
+
+# TODO make function to use CIs to do something with differential edges - like if CIs don't overlap between groups call them "differential"
+
+# TODO parallelize bootstrap code to speed up?
+
+# make same sort of functions for 
+
+```
+
 
 ```{r include = FALSE}
 ## Calculate metrics for SSJGL
