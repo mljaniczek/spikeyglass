@@ -37,4 +37,4 @@ LinkingTo:
     Rcpp,
     RcppArmadillo
 Remotes:
-    patrickjdanaher/JGL-package
+    JGL=patrickjdanaher/JGL-package
