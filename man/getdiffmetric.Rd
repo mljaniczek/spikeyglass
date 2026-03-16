@@ -2,22 +2,33 @@
 % Please edit documentation in R/getdiffmetric.R
 \name{getdiffmetric}
 \alias{getdiffmetric}
-\title{getdiffmetric}
+\title{Compute differential edge metrics across groups}
 \usage{
 getdiffmetric(est, truth, graph, tol)
 }
 \arguments{
-\item{est}{?}
+\item{est}{List of K estimated precision matrices.}
 
-\item{truth}{?}
+\item{truth}{List of K true precision matrices.}
 
-\item{graph}{?}
+\item{graph}{List of K true binary adjacency matrices.}
 
-\item{tol}{?}
+\item{tol}{Numeric tolerance for declaring continuous differences. Entries
+with \code{abs(diff) > tol} are considered different.}
 }
 \value{
-Summary of true positive, false positives, true negatives etc
+A named list with elements:
+\describe{
+\item{tp.gdiff}{True positives for graph-level differences.}
+\item{fp.gdiff}{False positives for graph-level differences.}
+\item{fn.gdiff}{False negatives for graph-level differences.}
+\item{tp.diff}{True positives for continuous-value differences.}
+\item{fp.diff}{False positives for continuous-value differences.}
+\item{fn.diff}{False negatives for continuous-value differences.}
+}
 }
 \description{
-getdiffmetric
+Evaluates how well the method recovers edges that differ between groups.
+Computes both graph-level differences (binary edge presence) and
+continuous-value differences (precision matrix entries).
 }

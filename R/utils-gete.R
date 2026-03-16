@@ -1,7 +1,14 @@
+#' E-step for spike-and-slab prior (internal)
 #'
-#' This is an internal function for the estep of ssjgl
+#' Computes posterior probabilities of edge inclusion (delta) and the
+#' adaptive penalty weights for the M-step. Implements the E-step from
+#' Li et al. (2019), equations 9-10.
+#'
+#' For the single spike-and-slab case, computes P(delta=1|Omega, pi_delta)
+#' for each edge (j,k). For the doubly spike-and-slab case, dispatches to
+#' \code{gete.doubly} which computes three-way probabilities.
+#' @keywords internal
 #' @noRd
-#' @noMd
 
 gete <- function(p, theta, lambda1, lambda2, v0, v1, pi_delta, pi_xi, penalty, doubly){
   if(doubly) return(gete.doubly(p, theta, lambda1, lambda2, v0, v1, pi_delta, pi_xi, penalty))
@@ -94,8 +101,13 @@ gete.doubly <- function(p, theta, lambda1, lambda2, v0, v1, pi_delta, pi_xi, pen
 
   prob1 <- prob[,,2] + prob[,,3]
   prob2 <- prob[,,3]
+  # Replace NaN with 0 (can arise from extreme log-probabilities)
+  prob1[is.nan(prob1)] <- 0
+  prob2[is.nan(prob2)] <- 0
   d1 <- (1-prob1)/v0 + prob1/v1
   d2 <- (1-prob2)/v0 + prob2/v1
+  d1[is.nan(d1)] <- 1/v0
+  d2[is.nan(d2)] <- 1/v0
   diag(prob1) <- diag(prob2) <- 0
   diag(d1) <- diag(d2) <- 0
 

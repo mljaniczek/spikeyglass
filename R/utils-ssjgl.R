@@ -1,9 +1,9 @@
+#' Adaptive Joint Graphical Lasso (internal)
 #'
-#' This function is adapted from the JGL package (version 2.3, 2013-04-16)
-#' It takes lambda1 and lambda2 as matrices
-#' It also takes a lambda0 variable (scalar) for penalization of the diagonals
+#' Adapted from JGL package (v2.3) to accept matrix-valued lambda1/lambda2
+#' penalties for adaptive edge-specific penalization from the SSJGL E-step.
+#' @keywords internal
 #' @noRd
-#' @noMd
 
 JGL.adaptive <-
   function(Y, addvar = NULL, penalty="fused",lambda0,lambda1,lambda2,rho=1,weights="sample.size", maxiter=500,tol=1e-5,warm=NULL, warm.connected=NULL, return.whole.theta=FALSE, truncate=0, normalize=FALSE)
@@ -99,8 +99,10 @@ JGL.adaptive <-
     }
 
     ## now identify block structure using igraph:
-    g1 <- igraph::graph.adjacency(critboth)
-    cout = igraph::clusters(g1)
+    # Replace any NAs/NaNs with FALSE to prevent igraph errors
+    critboth[is.na(critboth)] <- FALSE
+    g1 <- igraph::graph_from_adjacency_matrix(critboth)
+    cout = igraph::components(g1)
     blocklist = list()
     # identify unconnected elements, and get blocks:
     unconnected = c()
@@ -233,10 +235,18 @@ JGL.adaptive <-
     return(out)
   }
 
-# MJ ADDED FUNCTIONS BELOW
-# goal is to be able to add some functionality to make inference
-
-# negative log likelihood validation
+#' Gaussian negative log-likelihood
+#'
+#' Computes \code{-log|Theta| + tr(S * Theta)} which is proportional to the
+#' negative log-likelihood of a multivariate Gaussian with precision Theta
+#' and sample covariance S. Used for cross-validation scoring.
+#'
+#' @param S Sample covariance matrix (p x p).
+#' @param Theta Precision matrix (p x p).
+#'
+#' @return Scalar negative log-likelihood. Returns \code{Inf} if Theta is
+#'   not positive definite.
+#' @export
 negloglik_Gaussian <- function(S, Theta) {
   Theta <- as.matrix(Theta)
   # guard: determinant can fail if not PD
@@ -245,7 +255,18 @@ negloglik_Gaussian <- function(S, Theta) {
   -as.numeric(detinfo$modulus) + sum(diag(S %*% Theta))
 }
 
-# precision to partial correlation
+#' Convert precision matrix to partial correlations
+#'
+#' Computes partial correlations from a precision matrix using the formula
+#' \code{pcor[i,j] = -Theta[i,j] / sqrt(Theta[i,i] * Theta[j,j])}.
+#' Diagonal entries are set to 1.
+#'
+#' @param Theta Precision matrix (p x p). Must be positive definite.
+#'
+#' @return A p x p partial correlation matrix with 1s on the diagonal.
+#'   Returns a matrix of \code{NA}s if the diagonal contains non-positive
+#'   or non-finite values.
+#' @export
 precision_to_pcor <- function(Theta) {
   Theta <- as.matrix(Theta)
   d <- diag(Theta)
@@ -264,8 +285,29 @@ precision_to_pcor <- function(Theta) {
 }
 
 
-
-# CV ladder selection to select "best" v0
+#' Select v0 via K-fold cross-validation
+#'
+#' Evaluates each v0 value in the ladder using K-fold cross-validation
+#' with Gaussian negative log-likelihood as the scoring criterion.
+#' Selects the v0 that minimizes the total CV loss.
+#'
+#' @param Y List of K data matrices.
+#' @param v0s Numeric vector of v0 values to evaluate.
+#' @param folds Integer number of CV folds. Default 5.
+#' @param seed Integer random seed. Default 1.
+#' @param penalty,lambda0,lambda1,lambda2,v1,doubly,rho,a,b,maxitr.em,tol.em,maxitr.jgl,tol.jgl,truncate,normalize,c,impute
+#'   Arguments passed to \code{\link{ssjgl}}.
+#' @param verbose Logical. If TRUE, prints fold progress. Default TRUE.
+#'
+#' @return A list with elements:
+#'   \describe{
+#'     \item{v0_best}{The selected v0 value.}
+#'     \item{i_best}{Index of the best v0 in \code{v0s}.}
+#'     \item{cv_score}{Named numeric vector of total CV scores per v0.}
+#'     \item{folds}{Number of folds used.}
+#'     \item{seed}{Random seed used.}
+#'   }
+#' @export
 SSJGL_select_v0_cv <- function(
     Y, v0s,
     folds = 5,
@@ -376,7 +418,35 @@ SSJGL_select_v0_cv <- function(
 }
 
 
-## Final function which uses best v0, and add bootstrap CIs
+#' Fit SSJGL at best v0 with bootstrap confidence intervals
+#'
+#' Fits the model on the full data at a single v0 value, then computes
+#' bootstrap confidence intervals for partial correlations using the
+#' percentile method.
+#'
+#' @param Y List of K data matrices.
+#' @param v0_best Scalar v0 value to use.
+#' @param B Integer number of bootstrap samples. Default 200.
+#' @param ci_level Numeric confidence level (e.g., 0.95). Default 0.95.
+#' @param seed Integer random seed. Default 1.
+#' @param penalty,lambda0,lambda1,lambda2,v1,doubly,rho,a,b,maxitr.em,tol.em,maxitr.jgl,tol.jgl,truncate,normalize,c,impute
+#'   Arguments passed to \code{\link{ssjgl}}.
+#' @param verbose Logical. If TRUE, prints bootstrap progress. Default TRUE.
+#'
+#' @return A list with elements:
+#'   \describe{
+#'     \item{v0_best}{The v0 value used.}
+#'     \item{fit}{The ssjgl fit on the full data.}
+#'     \item{theta_hat}{List of K estimated precision matrices.}
+#'     \item{pcor_hat}{List of K partial correlation matrices.}
+#'     \item{CI_lower}{List of K lower CI bound matrices (pcor).}
+#'     \item{CI_upper}{List of K upper CI bound matrices (pcor).}
+#'     \item{boot_pcor}{List of K arrays (p x p x B) of bootstrap pcors.}
+#'     \item{B}{Number of bootstrap samples.}
+#'     \item{ci_level}{Confidence level used.}
+#'     \item{seed}{Random seed used.}
+#'   }
+#' @export
 SSJGL_final_with_pcor_CI <- function(
     Y,
     v0_best,
@@ -517,7 +587,34 @@ SSJGL_final_with_pcor_CI <- function(
   )
 }
 
-# final function putting it all together
+#' Full SSJGL workflow: CV selection + final fit with bootstrap CIs
+#'
+#' Combines \code{\link{SSJGL_select_v0_cv}} and
+#' \code{\link{SSJGL_final_with_pcor_CI}} into a single call. First selects
+#' the best v0 via cross-validation, then fits the final model at that v0
+#' and computes bootstrap confidence intervals for partial correlations.
+#'
+#' @param Y List of K data matrices.
+#' @param v0s Numeric vector of v0 values to search over.
+#' @param folds Integer number of CV folds. Default 5.
+#' @param B Integer number of bootstrap samples. Default 200.
+#' @param ci_level Numeric confidence level. Default 0.95.
+#' @param seed Integer random seed. Default 1.
+#' @param penalty,lambda0,lambda1,lambda2,v1,doubly,rho,a,b
+#'   Arguments passed to \code{\link{ssjgl}}.
+#' @param maxitr.em.cv,maxitr.jgl.cv Max iterations for CV fits (smaller
+#'   for speed). Defaults 200.
+#' @param tol.em,tol.jgl Convergence tolerances.
+#' @param maxitr.em,maxitr.jgl Max iterations for final fit. Defaults 500.
+#' @param truncate,normalize,c,impute Additional \code{ssjgl} arguments.
+#' @param verbose Logical. Default TRUE.
+#'
+#' @return A list with elements:
+#'   \describe{
+#'     \item{cv}{Output of \code{\link{SSJGL_select_v0_cv}}.}
+#'     \item{final}{Output of \code{\link{SSJGL_final_with_pcor_CI}}.}
+#'   }
+#' @export
 SSJGL_CV_final_pcorCI <- function(
     Y,
     v0s,
