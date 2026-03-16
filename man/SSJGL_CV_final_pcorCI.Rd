@@ -72,3 +72,18 @@ Combines \code{\link{SSJGL_select_v0_cv}} and
 the best v0 via cross-validation, then fits the final model at that v0
 and computes bootstrap confidence intervals for partial correlations.
 }
+\examples{
+\dontrun{
+sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
+res <- SSJGL_CV_final_pcorCI(
+  Y = sim$data_list,
+  v0s = c(0.05, 0.01, 0.005),
+  folds = 3, B = 20,
+  penalty = "fused",
+  lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+  normalize = TRUE, impute = FALSE
+)
+res$cv$v0_best
+res$final$pcor_hat[[1]][1:5, 1:5]
+}
+}

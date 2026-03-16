@@ -11,7 +11,7 @@ ssjgl(
   lambda1,
   lambda2,
   v1 = 1,
-  v0s = seq(1e-04, 0.01, len = 10),
+  v0s = c(0.1, 0.03, 0.01),
   doubly = FALSE,
   rho = 1,
   a = 1,
@@ -64,12 +64,14 @@ left at 1.}
 
 \item{v0s}{Numeric vector of spike variance parameters, typically
 \strong{decreasing}. Smaller v0 = stronger shrinkage for unlikely edges.
-The effective spike penalty is \code{lambda1/v0}, so \code{v0s} should be
-scaled relative to \code{lambda1}. Use \code{\link{make_v0_ladder}} to
-generate an appropriate sequence:
-\code{v0s = make_v0_ladder(lambda1)}.
-Default \code{seq(0.0001, 0.01, len = 10)} (appropriate only for small
-lambda1 ~ 0.01; see \code{\link{make_v0_ladder}} for general use).}
+The spike standard deviation \code{sqrt(v0)} sets the scale below which
+partial correlations are considered noise. For normalized data where
+partial correlations live in \link{-1, 1}, \code{v0 = 0.01} (spike SD = 0.1)
+provides a natural noise/signal boundary. The default
+\code{c(0.1, 0.03, 0.01)} provides a short warm-start ladder ending at
+this target. See \code{vignette("parameter-exploration")} for guidance
+on choosing v0 and the \code{\link{make_v0_ladder}} helper for generating
+longer exploration ladders.}
 
 \item{doubly}{Logical. If \code{TRUE}, uses doubly spike-and-slab prior
 with separate indicators for edge existence (delta) and cross-group
@@ -142,6 +144,16 @@ penalization.
 The algorithm follows the dynamic posterior exploration strategy of Li et al.
 (2019), iterating over a decreasing ladder of spike variance parameters
 \code{v0s} with warm-starting between steps.
+}
+\examples{
+sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+fit <- ssjgl(sim$data_list, penalty = "fused",
+             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+             v0s = c(0.1, 0.03, 0.01),
+             maxitr.em = 50, impute = FALSE)
+print(fit)
+adj <- extract_adjacency(fit, threshold = 0.5)
+sum(adj[[1]][upper.tri(adj[[1]])])  # estimated edge count
 }
 \references{
 Li, Z. R., McCormick, T. H., & Clark, S. J. (2019). Bayesian Joint

@@ -65,3 +65,20 @@ Fits the model on the full data at a single v0 value, then computes
 bootstrap confidence intervals for partial correlations using the
 percentile method.
 }
+\examples{
+\dontrun{
+sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
+boot_res <- SSJGL_final_with_pcor_CI(
+  Y = sim$data_list,
+  v0_best = 0.01,
+  B = 20,
+  penalty = "fused",
+  lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+  normalize = TRUE, impute = FALSE
+)
+# Edges where 95\% CI excludes zero
+sig <- (boot_res$CI_lower[[1]] > 0) | (boot_res$CI_upper[[1]] < 0)
+diag(sig) <- FALSE
+sum(sig[upper.tri(sig)])
+}
+}

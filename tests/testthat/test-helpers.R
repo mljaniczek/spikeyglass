@@ -100,17 +100,17 @@ test_that("negloglik_Gaussian returns Inf for non-PD input", {
 })
 
 test_that("make_v0_ladder produces correct output", {
-  v0s <- make_v0_ladder(lambda1 = 1, n_steps = 10, max_mult = 100)
+  v0s <- make_v0_ladder(lambda1 = 1, n_steps = 10)
 
   expect_length(v0s, 10)
   # Should be decreasing by default
   expect_true(all(diff(v0s) < 0))
   # All positive
   expect_true(all(v0s > 0))
-  # First value should be close to lambda1 (= 1)
-  expect_true(v0s[1] <= 1)
-  # Last value should be approximately lambda1/max_mult
-  expect_true(v0s[10] < 0.02)
+  # First value: v0 = lambda1/min_ratio = 1/5 = 0.2
+  expect_equal(v0s[1], 1/5)
+  # Last value: v0 = lambda1/max_ratio = 1/500 = 0.002
+  expect_equal(v0s[10], 1/500)
 })
 
 test_that("make_v0_ladder scales with lambda1", {
@@ -137,13 +137,14 @@ test_that("make_v0_ladder start_sparse argument works", {
 test_that("make_v0_ladder validates inputs", {
   expect_error(make_v0_ladder(lambda1 = -1))
   expect_error(make_v0_ladder(lambda1 = 1, n_steps = 1))
-  expect_error(make_v0_ladder(lambda1 = 1, max_mult = 0.5))
+  expect_error(make_v0_ladder(lambda1 = 1, min_ratio = 0))
+  expect_error(make_v0_ladder(lambda1 = 1, max_ratio = 3, min_ratio = 5))
 })
 
 test_that("plot_stability runs without error", {
   skip_on_cran()
   sim <- simulate_ssjgl_data(K = 2, p = 5, n = 30, graph_type = "band", seed = 1)
-  v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 3, max_mult = 50)
+  v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 3)
   fit <- suppressMessages(ssjgl(
     Y = sim$data_list,
     penalty = "fused",

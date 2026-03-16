@@ -2,7 +2,7 @@
 % Please edit documentation in R/getmetric.R
 \name{getmetric}
 \alias{getmetric}
-\title{Compute graph recovery metrics}
+\title{Compute graph recovery metrics (single group)}
 \usage{
 getmetric(est, truth, graph)
 }
@@ -30,4 +30,21 @@ A named list with elements:
 Compares an estimated precision matrix to the truth, computing edge-level
 metrics (TP, FP, TN, FN), sum of squared errors, L1 norm, and
 Kullback-Leibler divergence.
+}
+\details{
+This is a legacy function from the reference implementation. For new code,
+use \code{\link{compute_metrics}} which handles multi-group fits directly.
+}
+\examples{
+# Single-group metric computation
+p <- 5
+truth <- diag(p)
+truth[1,2] <- truth[2,1] <- -0.3
+est <- truth + matrix(rnorm(p*p, 0, 0.01), p, p)
+est <- (est + t(est)) / 2
+graph <- (truth != 0) * 1L; diag(graph) <- 0L
+getmetric(est, truth, graph)
+}
+\seealso{
+\code{\link{compute_metrics}} for the recommended multi-group interface.
 }

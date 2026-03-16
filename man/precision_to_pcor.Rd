@@ -19,3 +19,7 @@ Computes partial correlations from a precision matrix using the formula
 \code{pcor[i,j] = -Theta[i,j] / sqrt(Theta[i,i] * Theta[j,j])}.
 Diagonal entries are set to 1.
 }
+\examples{
+Theta <- matrix(c(2, -0.5, -0.5, 2), 2, 2)
+precision_to_pcor(Theta)  # partial correlation = 0.25
+}

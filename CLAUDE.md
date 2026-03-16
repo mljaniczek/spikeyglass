@@ -100,7 +100,15 @@ R CMD INSTALL .
 
 2. **Convergence criterion (fixed)**: Original used `max(diff, (theta_last[[k]] - theta[[k]])^2)` which computes element-wise squared differences. Fixed to `max(abs(...))` for consistent tolerance semantics.
 
-3. **JGL internal access**: Package uses `JGL:::` to access unexported functions (flsa2, dsgl, gcrit, crit, penalty.as.matrix, admm.iters.unconnected). These may break if JGL changes internals.
+3. **JGL internal access**: Package uses `JGL:::` to access unexported functions (flsa2, dsgl, gcrit, crit, penalty.as.matrix, admm.iters.unconnected). These may break if JGL changes internals. Locations: `R/utils-ssjgl.R` (4 uses: lines ~167, 189, 192, 193) and `R/utils-admm.R` (3 uses in R fallback path). The C++ ADMM path reimplements flsa2 and dsgl, reducing dependence for K<=2 cases.
+
+4. **Imputation meanj indexing (fixed)**: `ssjgl.R` line 356 used `meanj[missed[, 3]]` which indexes a (K x p) matrix with a single vector (treated as linear indexing). Fixed to `meanj[cbind(missed[, 1], missed[, 3])]` for correct group-specific mean restoration.
+
+## TODO (low priority)
+
+- **gete() log-sum-exp**: The simple (non-doubly) E-step in `gete()` (`R/utils-gete.R`) does not use the log-sum-exp trick for numerical stability. The doubly version `gete.doubly()` does. With the new default `v0s = c(0.1, 0.03, 0.01)` this is unlikely to cause underflow, but would matter at extreme v0 values (<< 0.001). Consider adding log-sum-exp to `gete()` if users report numerical issues.
+
+- **JGL ::: fragility**: Long-term, consider vendoring the 4-5 JGL internal functions (flsa2, dsgl, penalty.as.matrix, admm.iters.unconnected) directly into spikeyglass to remove the fragile `:::` dependency. The C++ ADMM path already reimplements the core routines for K<=2.
 
 ## Cross-project Notes (multiGGMr)
 

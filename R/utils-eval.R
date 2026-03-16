@@ -17,6 +17,12 @@
 #' @return A named list with elements: TP, FP, TN, FN, TPR (sensitivity),
 #'   FPR (1-specificity), precision, F1.
 #' @export
+#'
+#' @examples
+#' # Simulated score and truth matrices
+#' truth <- matrix(c(0,1,0, 1,0,1, 0,1,0), 3, 3)
+#' scores <- matrix(c(0,0.9,0.1, 0.9,0,0.8, 0.1,0.8,0), 3, 3)
+#' confusion_at_threshold(scores, truth, threshold = 0.5)
 confusion_at_threshold <- function(score_mat, truth_mat, threshold = 0.5,
                                    upper_only = TRUE) {
   score_mat <- as.matrix(score_mat)
@@ -67,6 +73,12 @@ confusion_at_threshold <- function(score_mat, truth_mat, threshold = 0.5,
 #'     \item{AUC}{Scalar area under the ROC curve (trapezoidal rule).}
 #'   }
 #' @export
+#'
+#' @examples
+#' truth <- matrix(c(0,1,0,0, 1,0,1,0, 0,1,0,1, 0,0,1,0), 4, 4)
+#' scores <- matrix(c(0,.9,.1,.05, .9,0,.8,.1, .1,.8,0,.7, .05,.1,.7,0), 4, 4)
+#' roc <- roc_auc(scores, truth)
+#' roc$AUC
 roc_auc <- function(score_mat, truth_mat) {
   score_mat <- as.matrix(score_mat)
   truth_mat <- as.matrix(truth_mat)
@@ -131,6 +143,14 @@ roc_auc <- function(score_mat, truth_mat) {
 #'     \item{overall}{Named list with mean TPR, mean FPR, mean AUC across groups.}
 #'   }
 #' @export
+#'
+#' @examples
+#' sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+#' fit <- ssjgl(sim$data_list, penalty = "fused",
+#'              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'              v0s = 0.01, maxitr.em = 10, impute = FALSE)
+#' m <- compute_metrics(fit, sim$adj_list, sim$Omega_list)
+#' m$overall
 compute_metrics <- function(fit, true_adj, true_omega = NULL,
                             v0_index = NULL, threshold = 0.5) {
   if (is.null(v0_index)) v0_index <- length(fit$thetalist)
@@ -188,6 +208,12 @@ compute_metrics <- function(fit, true_adj, true_omega = NULL,
 #'
 #' @return Invisible NULL. Called for side effect (plot).
 #' @export
+#'
+#' @examples
+#' truth <- matrix(c(0,1,0,0, 1,0,1,0, 0,1,0,1, 0,0,1,0), 4, 4)
+#' scores <- matrix(c(0,.9,.1,.05, .9,0,.8,.1, .1,.8,0,.7, .05,.1,.7,0), 4, 4)
+#' roc <- roc_auc(scores, truth)
+#' plot_roc(roc)
 plot_roc <- function(roc_obj, main = "ROC Curve", ...) {
   graphics::plot(roc_obj$FPR, roc_obj$TPR, type = "l",
                  xlab = "False Positive Rate", ylab = "True Positive Rate",

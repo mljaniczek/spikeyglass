@@ -19,3 +19,9 @@ Invisible NULL. Called for side effect (plot).
 \description{
 Plots the ROC curve from a \code{\link{roc_auc}} result.
 }
+\examples{
+truth <- matrix(c(0,1,0,0, 1,0,1,0, 0,1,0,1, 0,0,1,0), 4, 4)
+scores <- matrix(c(0,.9,.1,.05, .9,0,.8,.1, .1,.8,0,.7, .05,.1,.7,0), 4, 4)
+roc <- roc_auc(scores, truth)
+plot_roc(roc)
+}

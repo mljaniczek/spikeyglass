@@ -26,3 +26,9 @@ Computes the ROC curve (TPR vs FPR at varying thresholds) and the
 area under the curve (AUC) for edge selection. Only the upper triangle
 of the matrices is used.
 }
+\examples{
+truth <- matrix(c(0,1,0,0, 1,0,1,0, 0,1,0,1, 0,0,1,0), 4, 4)
+scores <- matrix(c(0,.9,.1,.05, .9,0,.8,.1, .1,.8,0,.7, .05,.1,.7,0), 4, 4)
+roc <- roc_auc(scores, truth)
+roc$AUC
+}

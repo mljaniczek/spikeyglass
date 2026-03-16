@@ -21,3 +21,11 @@ A list of K binary adjacency matrices (p x p, 0 diagonal).
 Thresholds the edge inclusion probabilities to produce binary adjacency
 matrices.
 }
+\examples{
+sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+fit <- ssjgl(sim$data_list, penalty = "fused",
+             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+             v0s = 0.01, maxitr.em = 10, impute = FALSE)
+adj <- extract_adjacency(fit, threshold = 0.5)
+sum(adj[[1]][upper.tri(adj[[1]])])  # edge count
+}

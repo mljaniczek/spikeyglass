@@ -2,20 +2,27 @@
 % Please edit documentation in R/helpers.R
 \name{make_v0_ladder}
 \alias{make_v0_ladder}
-\title{Generate a v0 ladder scaled to lambda1}
+\title{Generate a v0 ladder for exploring sparsity levels}
 \usage{
-make_v0_ladder(lambda1, n_steps = 15, max_mult = 200, start_sparse = TRUE)
+make_v0_ladder(
+  lambda1,
+  n_steps = 10,
+  min_ratio = 5,
+  max_ratio = 500,
+  start_sparse = TRUE
+)
 }
 \arguments{
 \item{lambda1}{Numeric scalar; the off-diagonal penalty used in
 \code{\link{ssjgl}}. The v0 ladder is scaled to this value.}
 
-\item{n_steps}{Integer number of v0 values in the ladder. Default 15.}
+\item{n_steps}{Integer number of v0 values in the ladder. Default 10.}
 
-\item{max_mult}{Numeric maximum multiplier for the denominator. Controls
-how sparse the final (smallest) v0 is. Larger values produce sparser
-final models. Default 200. The smallest v0 will be approximately
-\code{lambda1 / max_mult}.}
+\item{min_ratio}{Numeric minimum effective penalty ratio
+\code{lambda1/v0} at the first (densest) step. Default 5.}
+
+\item{max_ratio}{Numeric maximum effective penalty ratio
+\code{lambda1/v0} at the last (sparsest) step. Default 500.}
 
 \item{start_sparse}{Logical. If \code{TRUE} (default), the first v0 is
 the largest (weakest penalty) and the sequence is decreasing, which is
@@ -27,39 +34,37 @@ A numeric vector of length \code{n_steps} with v0 values,
 decreasing by default.
 }
 \description{
-Creates a decreasing sequence of spike variance values (\code{v0}) appropriate
-for the dynamic posterior exploration strategy in \code{\link{ssjgl}}.
-The v0 values are scaled relative to \code{lambda1} so that the effective
-penalty ratio \code{lambda1/v0} increases smoothly. This follows the pattern
-used in the reference implementation (Li et al., 2019).
+Creates a decreasing sequence of spike variance values (\code{v0}) for use
+with \code{\link{ssjgl}}. This is primarily useful for \strong{exploring}
+how sparsity changes across v0 values, for diagnostics, or for replicating
+the full dynamic posterior exploration strategy of Li et al. (2019).
 }
 \details{
-The formula is \code{v0 = lambda1 / (lambda1 + seq(from, to, length.out))},
-producing a harmonic sequence that spans from a weak penalty (\code{v0}
-close to \code{lambda1}) to a strong penalty (\code{v0} close to 0).
+For routine use, a short ladder like \code{v0s = c(0.1, 0.03, 0.01)} is
+recommended (see \code{\link{ssjgl}} defaults and
+\code{vignette("parameter-exploration")} for details).
 
-\strong{Choosing \code{max_mult}}: This controls the effective penalty
-range. The effective spike penalty at the final step is approximately
-\code{max_mult}. For example:
+The effective penalty for edge sparsity is \code{lambda1/v0}. This
+function creates a log-spaced ladder of v0 values such that the
+effective penalty ranges from \code{min_ratio} to \code{max_ratio}.
+Log-spacing concentrates more steps in the sparse (small v0) end
+where the model is most sensitive.
+
+\strong{Interpreting v0}: The spike standard deviation \code{sqrt(v0)} sets the
+scale below which partial correlations are treated as noise. For normalized
+data where partial correlations live in \link{-1, 1}:
 \itemize{
-\item \code{max_mult = 50}: moderate sparsity (good starting point)
-\item \code{max_mult = 200}: strong sparsity (default, good for most cases)
-\item \code{max_mult = 1000}: very aggressive sparsity
+\item \code{v0 = 0.1} (spike SD = 0.32): weak sparsity, broad spike
+\item \code{v0 = 0.01} (spike SD = 0.10): moderate sparsity, good default
+\item \code{v0 = 0.001} (spike SD = 0.03): aggressive sparsity
+\item \code{v0 = 0.0001} (spike SD = 0.01): very aggressive, may over-sparsify
 }
-
-\strong{Relationship to lambdas}: What matters for the SSJGL algorithm is
-the ratio \code{lambda1/v0}, not the absolute value of \code{v0}. This
-function ensures that the v0 ladder produces a sensible range of effective
-penalties regardless of how large or small \code{lambda1} is.
 }
 \examples{
-# For normalized data with lambda1 = 0.1
-v0s <- make_v0_ladder(lambda1 = 0.1)
-range(v0s)
-
-# For raw data with lambda1 = 1
-v0s <- make_v0_ladder(lambda1 = 1, n_steps = 20, max_mult = 100)
-range(v0s)
+# Exploration ladder for lambda1 = 0.5
+v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 10)
+data.frame(v0 = v0s, spike_sd = sqrt(v0s),
+           eff_penalty = 0.5 / v0s)
 }
 \seealso{
 \code{\link[=ssjgl]{ssjgl()}}, \code{\link[=plot_stability]{plot_stability()}}

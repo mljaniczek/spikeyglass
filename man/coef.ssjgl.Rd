@@ -18,5 +18,13 @@ uses the last step (most sparse).}
 A list of K precision matrices (p x p).
 }
 \description{
-Extract precision matrices from an ssjgl fit
+Equivalent to \code{\link{extract_precision}}.
+}
+\examples{
+sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+fit <- ssjgl(sim$data_list, penalty = "fused",
+             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+             v0s = 0.01, maxitr.em = 10, impute = FALSE)
+theta <- coef(fit)
+str(theta)  # list of K precision matrices
 }

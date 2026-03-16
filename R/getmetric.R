@@ -1,8 +1,11 @@
-#' Compute graph recovery metrics
+#' Compute graph recovery metrics (single group)
 #'
 #' Compares an estimated precision matrix to the truth, computing edge-level
 #' metrics (TP, FP, TN, FN), sum of squared errors, L1 norm, and
 #' Kullback-Leibler divergence.
+#'
+#' This is a legacy function from the reference implementation. For new code,
+#' use \code{\link{compute_metrics}} which handles multi-group fits directly.
 #'
 #' @param est Estimated precision matrix (p x p).
 #' @param truth True precision matrix (p x p).
@@ -19,8 +22,18 @@
 #'     \item{tn}{True negatives (correctly absent edges).}
 #'     \item{dKL}{Kullback-Leibler divergence KL(est || truth).}
 #'   }
+#' @seealso \code{\link{compute_metrics}} for the recommended multi-group interface.
 #' @export
-
+#'
+#' @examples
+#' # Single-group metric computation
+#' p <- 5
+#' truth <- diag(p)
+#' truth[1,2] <- truth[2,1] <- -0.3
+#' est <- truth + matrix(rnorm(p*p, 0, 0.01), p, p)
+#' est <- (est + t(est)) / 2
+#' graph <- (truth != 0) * 1L; diag(graph) <- 0L
+#' getmetric(est, truth, graph)
 getmetric <- function(est, truth, graph){
   out <- NULL
   gtmp <- graph
