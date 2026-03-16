@@ -98,3 +98,68 @@ test_that("negloglik_Gaussian returns Inf for non-PD input", {
   nll <- negloglik_Gaussian(S, Theta)
   expect_equal(nll, Inf)
 })
+
+test_that("make_v0_ladder produces correct output", {
+  v0s <- make_v0_ladder(lambda1 = 1, n_steps = 10, max_mult = 100)
+
+  expect_length(v0s, 10)
+  # Should be decreasing by default
+  expect_true(all(diff(v0s) < 0))
+  # All positive
+  expect_true(all(v0s > 0))
+  # First value should be close to lambda1 (= 1)
+  expect_true(v0s[1] <= 1)
+  # Last value should be approximately lambda1/max_mult
+  expect_true(v0s[10] < 0.02)
+})
+
+test_that("make_v0_ladder scales with lambda1", {
+  v0s_small <- make_v0_ladder(lambda1 = 0.01, n_steps = 5)
+  v0s_large <- make_v0_ladder(lambda1 = 1, n_steps = 5)
+
+  # Larger lambda1 should produce larger or equal v0 values
+  expect_true(all(v0s_large >= v0s_small))
+
+  # The smallest v0 should scale roughly with lambda1
+  expect_true(min(v0s_large) > min(v0s_small))
+})
+
+test_that("make_v0_ladder start_sparse argument works", {
+  v0s_dec <- make_v0_ladder(lambda1 = 1, n_steps = 5, start_sparse = TRUE)
+  v0s_inc <- make_v0_ladder(lambda1 = 1, n_steps = 5, start_sparse = FALSE)
+
+  expect_true(all(diff(v0s_dec) < 0))  # decreasing
+  expect_true(all(diff(v0s_inc) > 0))  # increasing
+  # Same values, just reversed
+  expect_equal(sort(v0s_dec), sort(v0s_inc))
+})
+
+test_that("make_v0_ladder validates inputs", {
+  expect_error(make_v0_ladder(lambda1 = -1))
+  expect_error(make_v0_ladder(lambda1 = 1, n_steps = 1))
+  expect_error(make_v0_ladder(lambda1 = 1, max_mult = 0.5))
+})
+
+test_that("plot_stability runs without error", {
+  skip_on_cran()
+  sim <- simulate_ssjgl_data(K = 2, p = 5, n = 30, graph_type = "band", seed = 1)
+  v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 3, max_mult = 50)
+  fit <- suppressMessages(ssjgl(
+    Y = sim$data_list,
+    penalty = "fused",
+    lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+    v0s = v0s,
+    maxitr.em = 10, tol.em = 1e-3,
+    maxitr.jgl = 50, tol.jgl = 1e-4,
+    impute = FALSE
+  ))
+
+  result <- plot_stability(fit, v0s)
+
+  expect_type(result, "list")
+  expect_equal(nrow(result$edge_counts), 3)
+  expect_equal(ncol(result$edge_counts), 2)
+  expect_length(result$mean_prob, 3)
+  expect_length(result$edge_changes, 2)
+  expect_true(all(result$mean_prob >= 0 & result$mean_prob <= 1))
+})
