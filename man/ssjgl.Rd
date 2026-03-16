@@ -35,19 +35,41 @@ are supported when \code{impute = TRUE}.}
 \item{penalty}{Character: \code{"fused"} (penalizes pairwise differences
 between groups) or \code{"group"} (penalizes L2 norm across groups).}
 
-\item{lambda0}{Scalar penalty on diagonal entries of precision matrices.}
+\item{lambda0}{Scalar penalty on diagonal entries of precision matrices.
+The method is relatively insensitive to this value; \code{lambda0 = 1} is
+recommended in most cases.}
 
-\item{lambda1}{Scalar (or matrix) penalty on off-diagonal entries
-(edge-wise sparsity). Adaptively weighted by the E-step.}
+\item{lambda1}{Scalar (or matrix) base penalty on off-diagonal entries
+(edge-wise sparsity). The E-step produces adaptive weights that multiply
+this value, so the effective penalty is edge-specific. The method is
+relatively insensitive to the absolute value of \code{lambda1} (Li et al.,
+2019); what matters most is the ratio \code{lambda1/v0}. Guidance:
+\itemize{
+\item Normalized data (\code{normalize = TRUE}): use 0.01--0.1
+\item Raw data with moderate variance: use 0.5--1
+\item p >> n settings: use smaller values (0.01)
+}}
 
-\item{lambda2}{Scalar (or matrix) penalty for the cross-group similarity
-term. Adaptively weighted by the E-step.}
+\item{lambda2}{Scalar (or matrix) base penalty for the cross-group
+similarity term. Controls borrowing of strength across groups:
+\itemize{
+\item \code{lambda2 = 0}: no cross-group borrowing (separate estimation)
+\item \code{lambda2 = lambda1}: equal weight on sparsity and similarity
+\item \code{lambda2 > lambda1}: encourage more similar graphs across groups
+\item \code{lambda2 < lambda1}: allow groups to differ more
+}}
 
-\item{v1}{Numeric slab variance parameter. Default 1.}
+\item{v1}{Numeric slab variance parameter. Default 1. Should generally be
+left at 1.}
 
-\item{v0s}{Numeric vector of spike variance parameters, typically decreasing.
-Smaller v0 = stronger shrinkage for unlikely edges.
-Default \code{seq(0.0001, 0.01, len = 10)}.}
+\item{v0s}{Numeric vector of spike variance parameters, typically
+\strong{decreasing}. Smaller v0 = stronger shrinkage for unlikely edges.
+The effective spike penalty is \code{lambda1/v0}, so \code{v0s} should be
+scaled relative to \code{lambda1}. Use \code{\link{make_v0_ladder}} to
+generate an appropriate sequence:
+\code{v0s = make_v0_ladder(lambda1)}.
+Default \code{seq(0.0001, 0.01, len = 10)} (appropriate only for small
+lambda1 ~ 0.01; see \code{\link{make_v0_ladder}} for general use).}
 
 \item{doubly}{Logical. If \code{TRUE}, uses doubly spike-and-slab prior
 with separate indicators for edge existence (delta) and cross-group
@@ -126,5 +148,6 @@ Li, Z. R., McCormick, T. H., & Clark, S. J. (2019). Bayesian Joint
 Spike-and-Slab Graphical Lasso. \emph{ICML 2019}.
 }
 \seealso{
-\code{\link[=plot_path]{plot_path()}}, \code{\link[=SSJGL_select_v0_cv]{SSJGL_select_v0_cv()}}, \code{\link[=compute_metrics]{compute_metrics()}}
+\code{\link[=make_v0_ladder]{make_v0_ladder()}}, \code{\link[=plot_path]{plot_path()}}, \code{\link[=plot_stability]{plot_stability()}},
+\code{\link[=SSJGL_select_v0_cv]{SSJGL_select_v0_cv()}}, \code{\link[=compute_metrics]{compute_metrics()}}
 }
