@@ -2,20 +2,32 @@
 % Please edit documentation in R/getmetric.R
 \name{getmetric}
 \alias{getmetric}
-\title{getmetric}
+\title{Compute graph recovery metrics}
 \usage{
 getmetric(est, truth, graph)
 }
 \arguments{
-\item{est}{?}
+\item{est}{Estimated precision matrix (p x p).}
 
-\item{truth}{?}
+\item{truth}{True precision matrix (p x p).}
 
-\item{graph}{?}
+\item{graph}{Binary adjacency matrix of the true graph (p x p, 0 diagonal).}
 }
 \value{
-Summary of true positive, false positives, true negatives etc
+A named list with elements:
+\describe{
+\item{SSE}{Sum of squared errors between est and truth (off-diagonal).}
+\item{L1}{L1 norm of the estimated precision (off-diagonal).}
+\item{nedges}{Number of non-zero edges in the estimate.}
+\item{tp}{True positives (edges correctly identified).}
+\item{fp}{False positives (spurious edges).}
+\item{fn}{False negatives (missed edges).}
+\item{tn}{True negatives (correctly absent edges).}
+\item{dKL}{Kullback-Leibler divergence KL(est || truth).}
+}
 }
 \description{
-getmetric
+Compares an estimated precision matrix to the truth, computing edge-level
+metrics (TP, FP, TN, FN), sum of squared errors, L1 norm, and
+Kullback-Leibler divergence.
 }

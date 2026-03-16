@@ -2,7 +2,7 @@
 % Please edit documentation in R/ssjgl.R
 \name{ssjgl}
 \alias{ssjgl}
-\title{ssjgl}
+\title{Bayesian Spike-and-Slab Joint Graphical Lasso}
 \usage{
 ssjgl(
   Y,
@@ -29,51 +29,102 @@ ssjgl(
 )
 }
 \arguments{
-\item{Y}{List of k data matrices}
+\item{Y}{List of K data matrices, each n_k x p. Missing values (\code{NA})
+are supported when \code{impute = TRUE}.}
 
-\item{penalty}{Either "fused" or "group"}
+\item{penalty}{Character: \code{"fused"} (penalizes pairwise differences
+between groups) or \code{"group"} (penalizes L2 norm across groups).}
 
-\item{lambda0}{scalar for penalization of the diagonals}
+\item{lambda0}{Scalar penalty on diagonal entries of precision matrices.}
 
-\item{lambda1}{either constant or matrix of values to search over}
+\item{lambda1}{Scalar (or matrix) penalty on off-diagonal entries
+(edge-wise sparsity). Adaptively weighted by the E-step.}
 
-\item{lambda2}{either constant or matrix of values to search over}
+\item{lambda2}{Scalar (or matrix) penalty for the cross-group similarity
+term. Adaptively weighted by the E-step.}
 
-\item{v1}{edgewise penalties}
+\item{v1}{Numeric slab variance parameter. Default 1.}
 
-\item{v0s}{edgewise penalties}
+\item{v0s}{Numeric vector of spike variance parameters, typically decreasing.
+Smaller v0 = stronger shrinkage for unlikely edges.
+Default \code{seq(0.0001, 0.01, len = 10)}.}
 
-\item{doubly}{True or False}
+\item{doubly}{Logical. If \code{TRUE}, uses doubly spike-and-slab prior
+with separate indicators for edge existence (delta) and cross-group
+similarity (xi). Default \code{FALSE}.}
 
-\item{rho}{default as 1}
+\item{rho}{Numeric ADMM step-size parameter. Default 1.}
 
-\item{a}{initializing parameters}
+\item{a}{Numeric Beta prior shape1 for inclusion probabilities. Default 1.}
 
-\item{b}{initializing parameters}
+\item{b}{Numeric Beta prior shape2. Default 1. Setting \code{b = p} gives
+a sparse prior.}
 
-\item{maxitr.em}{max iterations of EM algorithm. Default 500}
+\item{maxitr.em}{Integer max EM iterations per v0 step. Default 500.}
 
-\item{tol.em}{default 1e-4 ADD MORE}
+\item{tol.em}{Numeric EM convergence tolerance. Default 1e-4.}
 
-\item{maxitr.jgl}{max iterations for JGL. default 500}
+\item{maxitr.jgl}{Integer max ADMM iterations for M-step. Default 500.}
 
-\item{tol.jgl}{default 1e-4 ADD MORE}
+\item{tol.jgl}{Numeric ADMM convergence tolerance. Default 1e-5.}
 
-\item{warm}{default NULL. warming parameter for M step}
+\item{warm}{List of K warm-start precision matrices. Default \code{NULL}.}
 
-\item{warm.connected}{parameter for M-step}
+\item{warm.connected}{Logical vector for warm-starting block structure.
+Default \code{NULL}.}
 
-\item{truncate}{cutoff to truncate default 1e-5}
+\item{truncate}{Numeric threshold below which entries are zeroed. Default
+1e-5.}
 
-\item{normalize}{True or False}
+\item{normalize}{Logical. If \code{TRUE}, mean-centers each variable.
+Default \code{FALSE}.}
 
-\item{c}{constant. Default 0.1}
+\item{c}{Numeric diagonal regularization for initial precision estimate.
+Default 0.1.}
 
-\item{impute}{true or false}
+\item{impute}{Logical. If \code{TRUE}, imputes \code{NA}s via conditional
+MVN at each EM iteration. Default \code{TRUE}.}
 }
 \value{
-similar output to JGL
+An object of class \code{"ssjgl"}, a list with elements:
+\describe{
+\item{thetalist}{List (length = length(v0s)) of lists of K precision
+matrices (p x p) at each v0 step.}
+\item{pi1list}{List of pi_delta values (edge inclusion probability)
+at each v0 step.}
+\item{pi2list}{List of pi_xi values (non-similarity probability)
+at each v0 step.}
+\item{fitlist}{List of raw JGL fit objects at each v0 step.}
+\item{itrlist}{Integer vector of EM iterations at each v0 step.}
+\item{problist1}{List of p x p edge inclusion probability matrices
+P(delta=1) at each v0 step.}
+\item{penlist1}{List of p x p adaptive penalty weight matrices for
+lambda1 at each v0 step.}
+\item{problist2}{List of p x p non-similarity probability matrices
+P(xi=1). NULL if \code{doubly = FALSE}.}
+\item{penlist2}{List of p x p adaptive penalty weights for lambda2.
+NULL if \code{doubly = FALSE}.}
+\item{timelist}{Numeric vector of wall-clock seconds per v0 step.}
+\item{imputed}{Numeric vector of imputed values, or NULL.}
+\item{missed}{Matrix of (group, row, col) for missing values, or NULL.}
+}
 }
 \description{
-ssjgl
+Estimates multiple related precision matrices (inverse covariance matrices)
+across K groups using an EM algorithm with spike-and-slab priors. The method
+encourages shared sparsity across groups via either fused or group penalties,
+while allowing group-specific differences through adaptive, edge-specific
+penalization.
+}
+\details{
+The algorithm follows the dynamic posterior exploration strategy of Li et al.
+(2019), iterating over a decreasing ladder of spike variance parameters
+\code{v0s} with warm-starting between steps.
+}
+\references{
+Li, Z. R., McCormick, T. H., & Clark, S. J. (2019). Bayesian Joint
+Spike-and-Slab Graphical Lasso. \emph{ICML 2019}.
+}
+\seealso{
+\code{\link[=plot_path]{plot_path()}}, \code{\link[=SSJGL_select_v0_cv]{SSJGL_select_v0_cv()}}, \code{\link[=compute_metrics]{compute_metrics()}}
 }

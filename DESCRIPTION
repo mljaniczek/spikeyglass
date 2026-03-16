@@ -26,12 +26,9 @@ Depends:
     R (>= 2.10)
 LazyData: true
 URL: https://mljaniczek.github.io/spikeyglass/
-Imports: 
-    BDgraph,
+Imports:
     graphics,
-    Hmisc,
     igraph,
     JGL,
     MASS,
-    reshape,
     stats

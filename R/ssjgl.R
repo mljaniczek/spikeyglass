@@ -1,28 +1,79 @@
-#' ssjgl
+#' Bayesian Spike-and-Slab Joint Graphical Lasso
 #'
-#' @param Y List of k data matrices
-#' @param penalty Either "fused" or "group"
-#' @param lambda0 scalar for penalization of the diagonals
-#' @param lambda1 either constant or matrix of values to search over
-#' @param lambda2 either constant or matrix of values to search over
-#' @param v1 edgewise penalties
-#' @param v0s edgewise penalties
-#' @param doubly True or False
-#' @param rho default as 1
-#' @param a initializing parameters
-#' @param b initializing parameters
-#' @param maxitr.em max iterations of EM algorithm. Default 500
-#' @param tol.em default 1e-4 ADD MORE
-#' @param maxitr.jgl max iterations for JGL. default 500
-#' @param tol.jgl default 1e-4 ADD MORE
-#' @param warm default NULL. warming parameter for M step
-#' @param warm.connected parameter for M-step
-#' @param truncate cutoff to truncate default 1e-5
-#' @param normalize True or False
-#' @param c constant. Default 0.1
-#' @param impute true or false
+#' Estimates multiple related precision matrices (inverse covariance matrices)
+#' across K groups using an EM algorithm with spike-and-slab priors. The method
+#' encourages shared sparsity across groups via either fused or group penalties,
+#' while allowing group-specific differences through adaptive, edge-specific
+#' penalization.
 #'
-#' @return similar output to JGL
+#' The algorithm follows the dynamic posterior exploration strategy of Li et al.
+#' (2019), iterating over a decreasing ladder of spike variance parameters
+#' \code{v0s} with warm-starting between steps.
+#'
+#' @param Y List of K data matrices, each n_k x p. Missing values (\code{NA})
+#'   are supported when \code{impute = TRUE}.
+#' @param penalty Character: \code{"fused"} (penalizes pairwise differences
+#'   between groups) or \code{"group"} (penalizes L2 norm across groups).
+#' @param lambda0 Scalar penalty on diagonal entries of precision matrices.
+#' @param lambda1 Scalar (or matrix) penalty on off-diagonal entries
+#'   (edge-wise sparsity). Adaptively weighted by the E-step.
+#' @param lambda2 Scalar (or matrix) penalty for the cross-group similarity
+#'   term. Adaptively weighted by the E-step.
+#' @param v1 Numeric slab variance parameter. Default 1.
+#' @param v0s Numeric vector of spike variance parameters, typically decreasing.
+#'   Smaller v0 = stronger shrinkage for unlikely edges.
+#'   Default \code{seq(0.0001, 0.01, len = 10)}.
+#' @param doubly Logical. If \code{TRUE}, uses doubly spike-and-slab prior
+#'   with separate indicators for edge existence (delta) and cross-group
+#'   similarity (xi). Default \code{FALSE}.
+#' @param rho Numeric ADMM step-size parameter. Default 1.
+#' @param a Numeric Beta prior shape1 for inclusion probabilities. Default 1.
+#' @param b Numeric Beta prior shape2. Default 1. Setting \code{b = p} gives
+#'   a sparse prior.
+#' @param maxitr.em Integer max EM iterations per v0 step. Default 500.
+#' @param tol.em Numeric EM convergence tolerance. Default 1e-4.
+#' @param maxitr.jgl Integer max ADMM iterations for M-step. Default 500.
+#' @param tol.jgl Numeric ADMM convergence tolerance. Default 1e-5.
+#' @param warm List of K warm-start precision matrices. Default \code{NULL}.
+#' @param warm.connected Logical vector for warm-starting block structure.
+#'   Default \code{NULL}.
+#' @param truncate Numeric threshold below which entries are zeroed. Default
+#'   1e-5.
+#' @param normalize Logical. If \code{TRUE}, mean-centers each variable.
+#'   Default \code{FALSE}.
+#' @param c Numeric diagonal regularization for initial precision estimate.
+#'   Default 0.1.
+#' @param impute Logical. If \code{TRUE}, imputes \code{NA}s via conditional
+#'   MVN at each EM iteration. Default \code{TRUE}.
+#'
+#' @return An object of class \code{"ssjgl"}, a list with elements:
+#'   \describe{
+#'     \item{thetalist}{List (length = length(v0s)) of lists of K precision
+#'       matrices (p x p) at each v0 step.}
+#'     \item{pi1list}{List of pi_delta values (edge inclusion probability)
+#'       at each v0 step.}
+#'     \item{pi2list}{List of pi_xi values (non-similarity probability)
+#'       at each v0 step.}
+#'     \item{fitlist}{List of raw JGL fit objects at each v0 step.}
+#'     \item{itrlist}{Integer vector of EM iterations at each v0 step.}
+#'     \item{problist1}{List of p x p edge inclusion probability matrices
+#'       P(delta=1) at each v0 step.}
+#'     \item{penlist1}{List of p x p adaptive penalty weight matrices for
+#'       lambda1 at each v0 step.}
+#'     \item{problist2}{List of p x p non-similarity probability matrices
+#'       P(xi=1). NULL if \code{doubly = FALSE}.}
+#'     \item{penlist2}{List of p x p adaptive penalty weights for lambda2.
+#'       NULL if \code{doubly = FALSE}.}
+#'     \item{timelist}{Numeric vector of wall-clock seconds per v0 step.}
+#'     \item{imputed}{Numeric vector of imputed values, or NULL.}
+#'     \item{missed}{Matrix of (group, row, col) for missing values, or NULL.}
+#'   }
+#'
+#' @references
+#' Li, Z. R., McCormick, T. H., & Clark, S. J. (2019). Bayesian Joint
+#' Spike-and-Slab Graphical Lasso. \emph{ICML 2019}.
+#'
+#' @seealso [plot_path()], [SSJGL_select_v0_cv()], [compute_metrics()]
 #' @export
 
 
@@ -150,10 +201,11 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
       prob2 <- estep$prob2
       diag(prob1) <- 0
       if(doubly) diag(prob2) <- 0
-      pi_delta <- (a + sum(prob1) - 1) / (a + b + p * (p-1)- 2)
-      pi_xi <- (a + sum(prob2) - 1) / (a + b + p * (p-1)- 2)
-
-      # print(summary(as.numeric(prob1)))
+      # Pi update: posterior mode of Beta(a + sum_edges(prob), b + n_edges - sum_edges(prob))
+      # prob1 is symmetric with 0 diagonal, so sum(prob1)/2 counts each edge once
+      n_edges <- p * (p - 1) / 2
+      pi_delta <- (a + sum(prob1) / 2 - 1) / (a + b + n_edges - 2)
+      pi_xi <- (a + sum(prob2) / 2 - 1) / (a + b + n_edges - 2)
 
       # M-step
       lambda1_current <- lambda1 * d1
@@ -169,9 +221,8 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
       # compare difference
       if(!is.null(pi_delta_last)){
         diff <- 0
-        # diff <- max(abs(pi_delta_last - pi_delta))
-        ###TODO  MJ: double check if the max(diff, (theta_last[[k]] - theta[[k]])^2) is doing the correct thing?
-        for(k in 1:length(theta_last)) diff <- max(diff, (theta_last[[k]] - theta[[k]])^2)
+        # Convergence: max absolute change in any precision matrix entry
+        for(k in 1:length(theta_last)) diff <- max(diff, max(abs(theta_last[[k]] - theta[[k]])))
         if(doubly){
           cat(paste0("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab1: ", round(pi_delta, 4), "  p.slab2: ", round(pi_xi, 10), "\n"))
         }else{

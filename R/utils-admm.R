@@ -1,8 +1,10 @@
-#' ADMM for FGL:
-#' lam1 and lam2 are matrices
-#' @noMd
-#' @noRd
+#' ADMM iterations with adaptive (matrix-valued) penalties (internal)
 #'
+#' Implements ADMM for the fused or group graphical lasso M-step with
+#' matrix-valued lambda1 and lambda2 penalties. The theta update uses
+#' eigendecomposition, and the Z update delegates to JGL internal routines.
+#' @keywords internal
+#' @noRd
 admm.iters.adaptive = function(Y,lam1,lam2,penalty="fused",rho=1,rho.increment=1,weights,maxiter = 1000,tol=1e-5,warm=NULL)
 {
   K = length(Y)

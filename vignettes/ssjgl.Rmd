@@ -10,134 +10,201 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
 )
 ```
 
-```{r setup}
+## Introduction
+
+The `spikeyglass` package implements the Bayesian Spike-and-Slab Joint
+Graphical Lasso (SSJGL) from Li et al. (2019). This method estimates
+multiple related precision matrices (inverse covariance matrices) across
+K groups simultaneously, encouraging shared sparsity structure while
+allowing group-specific differences.
+
+Key features:
+
+- **Adaptive penalization**: spike-and-slab priors automatically determine
+  edge-specific penalty weights
+- **Two penalty types**: fused (penalizes pairwise differences) and group
+  (penalizes L2 norm across groups)
+- **Dynamic posterior exploration**: a ladder of v0 values avoids expensive
+  cross-validation
+- **Missing data handling**: built-in imputation via conditional MVN
+
+## Simulate data
+
+We generate a small synthetic example with K=2 groups and p=15 variables
+using a banded (AR-2) graph with a few differential edges.
+
+```{r simulate}
 library(spikeyglass)
-data("simdat")
-```
 
-```{r}
-# TODO visualizations of simdat 
-# TODO summarize SIMDAT
-# TODO FGL
-```
-
-The simulated data has 50 variables, and for the three groups there are some common graph structure with blocks of 5 variables being removed in the 2nd and 3rd group - see below. 
-
-```{r}
-heatmap(simdat$g[[1]], Rowv = NA, Colv = NA)
-heatmap(simdat$g[[2]], Rowv = NA, Colv = NA)
-heatmap(simdat$g[[3]], Rowv = NA, Colv = NA)
-```
-
-
-
-```{r}
-## Fig SSJGL
-
-simdat$Y <- simdat$Y[c(1,2)]
-simdat$g <- simdat$g[c(1,2)]
-set.seed(1219)
-G <- 2
-p <- 50
-penalty <- "fused"
-lam1 <- 1
-lam2 <- 1
-v1 <- 1
-lam.eff <- lam1 + c(1:10) * 5
-v0s <- lam1/lam.eff
-g <- simdat$g
-
-# takes 1 minute to run the below
-library(tictoc)
-tic()
-fit1 = ssjgl(Y=simdat$Y,penalty=penalty,lambda0=1, lambda1=lam1,lambda2=lam2, v1 = v1, v0s = v0s, tol.em=1E-4, a=1, b=p, doubly=TRUE, normalize=TRUE)
-toc()
-# 
-# 
-# 
-# # saving since it takes long
-# save(fit1, file = here::here("data/fit1.Rdata"))
-
-# load(here::here("data/fit1.Rdata"))
-
-# Get plot titles 
-mains <- c(paste0("Class 1"), 
-		   paste0("Class 2"))
-
-
-plot_path(lam1/v0s, fit1, thres = 0, normalize = F, xlab = expression(lambda[1]/v[0]^2), ylab = "Partial correlations",  main = mains, par = c(1, 2))
-
-
-```
-
-
-Now with new v0 selection
-```{r}
-res <- SSJGL_CV_final_pcorCI(
-  Y = simdat$Y,
-  v0s = seq(0.01, 0.0005, length.out = 10),
-  folds = 3,
-  B = 20,
-  ci_level = 0.95,
-  seed = 123,
-  penalty = "fused",
-  lambda0 = 0.1, lambda1 = 0.2, lambda2 = 0.2,
-  normalize = TRUE,
-  impute = TRUE
+sim <- simulate_ssjgl_data(
+  K = 2, p = 15, n = 100,
+  graph_type = "band",
+  perturb_prob = 0.05,
+  signal = 0.3,
+  seed = 42
 )
 
-# # Selected ladder step
-res$cv$v0_best
-res$cv$cv_score
-#
-# # Final partial correlation estimate for group k=1
-pcor_hat_g1 <- res$final$pcor_hat[[1]]
-#
-# # 95% CI matrices for partial correlations (group 1)
-pcor_lo_g1 <- res$final$CI_lower[[1]]
-pcor_hi_g1 <- res$final$CI_upper[[1]]
+# True adjacency matrices
+cat("Group 1 edges:", sum(sim$adj_list[[1]][upper.tri(sim$adj_list[[1]])]), "\n")
+cat("Group 2 edges:", sum(sim$adj_list[[2]][upper.tri(sim$adj_list[[2]])]), "\n")
 
-# TODO make function to use CIs to 
-
-# TODO make function to use CIs to do something with differential edges - like if CIs don't overlap between groups call them "differential"
-
-# TODO parallelize bootstrap code to speed up?
-
-# make same sort of functions for 
-
+# Visualize true graph structures
+par(mfrow = c(1, 2))
+image(sim$adj_list[[1]], main = "True Graph: Group 1",
+      col = c("white", "steelblue"), axes = FALSE)
+image(sim$adj_list[[2]], main = "True Graph: Group 2",
+      col = c("white", "steelblue"), axes = FALSE)
 ```
 
+## Fit the model
 
-```{r include = FALSE}
-## Calculate metrics for SSJGL
-# fit1$nedges <- fit1$SSE <- fit1$fp <- fit1$tp <- fit1$fn <- fit1$tn <- fit1$dKL <- fit1$L1 <- matrix(NA, length(lam.eff), G)
-# fit1$tp.gdiff <- fit1$fp.gdiff <- fit1$fn.gdiff <- rep(NA, length(lam.eff))
-# fit1$tp.diff <- fit1$fp.diff <- fit1$fn.diff <- rep(NA, length(lam.eff))
-# for(i in 1:length(v0s)){
-# 	for(k in 1:G){
-# 		met <- getmetric(est=fit1$thetalist[[i]][[k]], truth=Theta[[k]], graph=g[[k]])
-# 		fit1$nedges[i,k] <- met$nedges
-# 		fit1$SSE[i,k] <- met$SSE
-# 		fit1$fp[i,k] <- met$fp
-# 		fit1$tp[i,k] <- met$tp
-# 		fit1$fn[i,k] <- met$fn
-# 		fit1$tn[i,k] <- met$tn
-# 		fit1$dKL[i,k] <- met$dKL
-# 		fit1$L1[i,k] <- met$L1
-# 	}
-# 	met2 <- getdiffmetric(est=fit1$thetalist[[i]], truth = Theta, graph=g, tol=1e-2)
-# 	fit1$tp.gdiff[i] <- met2$tp.gdiff
-# 	fit1$fp.gdiff[i] <- met2$fp.gdiff
-# 	fit1$fn.gdiff[i] <- met2$fn.gdiff
-# 	fit1$tp.diff[i] <- met2$tp.diff
-# 	fit1$fp.diff[i] <- met2$fp.diff
-# 	fit1$fn.diff[i] <- met2$fn.diff
-# 	cat(".")
-# }
+We run SSJGL with the fused penalty and a ladder of 8 v0 values:
 
+```{r fit, results='hide'}
+v0s <- seq(0.01, 0.001, length.out = 8)
+
+fit <- ssjgl(
+  Y = sim$data_list,
+  penalty = "fused",
+  lambda0 = 0.1,
+  lambda1 = 0.5,
+  lambda2 = 0.5,
+  v1 = 1,
+  v0s = v0s,
+  doubly = TRUE,
+  a = 1, b = 15,
+  maxitr.em = 100,
+  tol.em = 1e-4,
+  normalize = TRUE,
+  impute = FALSE
+)
 ```
 
+```{r print}
+print(fit)
+```
+
+## Visualize the solution path
+
+The solution path shows how precision matrix entries evolve across the v0
+ladder. As v0 decreases, stronger shrinkage is applied and the graph
+becomes sparser.
+
+```{r path, fig.height=4}
+plot_path(v0s, fit, thres = 0.5, normalize = FALSE,
+          xlab = expression(v[0]), ylab = "Precision entries",
+          main = c("Group 1", "Group 2"), par = c(1, 2))
+```
+
+## Extract results
+
+```{r extract}
+# Precision matrices at the final (most sparse) v0 step
+theta_hat <- coef(fit)
+
+# Partial correlations
+pcor_hat <- fitted(fit)
+
+# Edge inclusion probabilities
+probs <- extract_probabilities(fit)
+
+# Binary adjacency from thresholding inclusion probabilities
+adj_hat <- extract_adjacency(fit, threshold = 0.5)
+
+cat("Estimated edges (Group 1):",
+    sum(adj_hat[[1]][upper.tri(adj_hat[[1]])]), "\n")
+cat("Estimated edges (Group 2):",
+    sum(adj_hat[[2]][upper.tri(adj_hat[[2]])]), "\n")
+```
+
+## Evaluate performance
+
+Compare the estimated graphs to the truth using TPR, FPR, and AUC:
+
+```{r metrics}
+metrics <- compute_metrics(
+  fit = fit,
+  true_adj = sim$adj_list,
+  true_omega = sim$Omega_list,
+  threshold = 0.5
+)
+
+cat("=== Overall Performance ===\n")
+cat(sprintf("Mean TPR: %.3f\n", metrics$overall$mean_TPR))
+cat(sprintf("Mean FPR: %.3f\n", metrics$overall$mean_FPR))
+cat(sprintf("Mean AUC: %.3f\n", metrics$overall$mean_AUC))
+
+for (k in 1:2) {
+  cat(sprintf("\n--- Group %d ---\n", k))
+  g <- metrics$per_group[[k]]
+  cat(sprintf("  TP=%d, FP=%d, TN=%d, FN=%d\n", g$TP, g$FP, g$TN, g$FN))
+  cat(sprintf("  TPR=%.3f, FPR=%.3f, F1=%.3f\n", g$TPR, g$FPR, g$F1))
+  cat(sprintf("  Frobenius norm: %.3f\n", g$frobenius_norm))
+}
+```
+
+### ROC curve
+
+```{r roc, fig.height=5, fig.width=5}
+plot_roc(metrics$roc[[1]], main = "ROC Curve (Group 1)")
+```
+
+## Select v0 via cross-validation
+
+For real data where the truth is unknown, use cross-validation to select
+the best v0:
+
+```{r cv, eval=FALSE}
+cv_res <- SSJGL_select_v0_cv(
+  Y = sim$data_list,
+  v0s = seq(0.01, 0.001, length.out = 8),
+  folds = 3,
+  penalty = "fused",
+  lambda0 = 0.1, lambda1 = 0.5, lambda2 = 0.5,
+  maxitr.em = 50, maxitr.jgl = 50,
+  normalize = TRUE
+)
+cat("Best v0:", cv_res$v0_best, "\n")
+```
+
+## Bootstrap confidence intervals
+
+The `SSJGL_final_with_pcor_CI` function computes bootstrap confidence
+intervals for partial correlations at a given v0:
+
+```{r bootstrap, eval=FALSE}
+boot_res <- SSJGL_final_with_pcor_CI(
+  Y = sim$data_list,
+  v0_best = 0.005,
+  B = 50,
+  ci_level = 0.95,
+  penalty = "fused",
+  lambda0 = 0.1, lambda1 = 0.5, lambda2 = 0.5,
+  normalize = TRUE
+)
+
+# Partial correlation point estimate for group 1
+pcor_g1 <- boot_res$pcor_hat[[1]]
+
+# 95% CI bounds
+lo <- boot_res$CI_lower[[1]]
+hi <- boot_res$CI_upper[[1]]
+
+# Edges where CI excludes zero
+significant_edges <- (lo > 0 | hi < 0)
+diag(significant_edges) <- FALSE
+cat("Significant edges (Group 1):",
+    sum(significant_edges[upper.tri(significant_edges)]), "\n")
+```
+
+## References
+
+Li, Z. R., McCormick, T. H., & Clark, S. J. (2019). Bayesian Joint
+Spike-and-Slab Graphical Lasso. *Proceedings of the 36th International
+Conference on Machine Learning (ICML)*.
