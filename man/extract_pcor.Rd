@@ -16,5 +16,13 @@ uses the last step.}
 A list of K partial correlation matrices (p x p).
 }
 \description{
-Extract partial correlation matrices from an ssjgl fit
+Equivalent to \code{fitted(fit)}.
+}
+\examples{
+sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+fit <- ssjgl(sim$data_list, penalty = "fused",
+             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+             v0s = 0.01, maxitr.em = 10, impute = FALSE)
+pcor <- extract_pcor(fit)
+range(pcor[[1]])  # values in [-1, 1]
 }

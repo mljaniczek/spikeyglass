@@ -1,25 +1,24 @@
 # Result extraction and tuning helpers for ssjgl objects
 
 
-#' Generate a v0 ladder scaled to lambda1
+#' Generate a v0 ladder for exploring sparsity levels
 #'
-#' Creates a decreasing sequence of spike variance values (\code{v0}) appropriate
-#' for the dynamic posterior exploration strategy in \code{\link{ssjgl}}.
-#' The v0 values are scaled relative to \code{lambda1} so that the effective
-#' penalty ratio \code{lambda1/v0} increases smoothly. This follows the pattern
-#' used in the reference implementation (Li et al., 2019).
+#' Creates a decreasing sequence of spike variance values (\code{v0}) for use
+#' with \code{\link{ssjgl}}. This is primarily useful for \strong{exploring}
+#' how sparsity changes across v0 values, for diagnostics, or for replicating
+#' the full dynamic posterior exploration strategy of Li et al. (2019).
 #'
-#' The formula is \code{v0 = lambda1 / (lambda1 + seq(from, to, length.out))},
-#' producing a harmonic sequence that spans from a weak penalty (\code{v0}
-#' close to \code{lambda1}) to a strong penalty (\code{v0} close to 0).
+#' For routine use, a short ladder like \code{v0s = c(0.1, 0.03, 0.01)} is
+#' recommended (see \code{\link{ssjgl}} defaults and
+#' \code{vignette("parameter-exploration")} for details).
 #'
 #' @param lambda1 Numeric scalar; the off-diagonal penalty used in
 #'   \code{\link{ssjgl}}. The v0 ladder is scaled to this value.
-#' @param n_steps Integer number of v0 values in the ladder. Default 15.
-#' @param max_mult Numeric maximum multiplier for the denominator. Controls
-#'   how sparse the final (smallest) v0 is. Larger values produce sparser
-#'   final models. Default 200. The smallest v0 will be approximately
-#'   \code{lambda1 / max_mult}.
+#' @param n_steps Integer number of v0 values in the ladder. Default 10.
+#' @param min_ratio Numeric minimum effective penalty ratio
+#'   \code{lambda1/v0} at the first (densest) step. Default 5.
+#' @param max_ratio Numeric maximum effective penalty ratio
+#'   \code{lambda1/v0} at the last (sparsest) step. Default 500.
 #' @param start_sparse Logical. If \code{TRUE} (default), the first v0 is
 #'   the largest (weakest penalty) and the sequence is decreasing, which is
 #'   the correct direction for warm-starting. If \code{FALSE}, returns an
@@ -29,38 +28,37 @@
 #'   decreasing by default.
 #'
 #' @details
-#' \strong{Choosing \code{max_mult}}: This controls the effective penalty
-#' range. The effective spike penalty at the final step is approximately
-#' \code{max_mult}. For example:
-#' \itemize{
-#'   \item \code{max_mult = 50}: moderate sparsity (good starting point)
-#'   \item \code{max_mult = 200}: strong sparsity (default, good for most cases)
-#'   \item \code{max_mult = 1000}: very aggressive sparsity
-#' }
+#' The effective penalty for edge sparsity is \code{lambda1/v0}. This
+#' function creates a log-spaced ladder of v0 values such that the
+#' effective penalty ranges from \code{min_ratio} to \code{max_ratio}.
+#' Log-spacing concentrates more steps in the sparse (small v0) end
+#' where the model is most sensitive.
 #'
-#' \strong{Relationship to lambdas}: What matters for the SSJGL algorithm is
-#' the ratio \code{lambda1/v0}, not the absolute value of \code{v0}. This
-#' function ensures that the v0 ladder produces a sensible range of effective
-#' penalties regardless of how large or small \code{lambda1} is.
+#' \strong{Interpreting v0}: The spike standard deviation \code{sqrt(v0)} sets the
+#' scale below which partial correlations are treated as noise. For normalized
+#' data where partial correlations live in [-1, 1]:
+#' \itemize{
+#'   \item \code{v0 = 0.1} (spike SD = 0.32): weak sparsity, broad spike
+#'   \item \code{v0 = 0.01} (spike SD = 0.10): moderate sparsity, good default
+#'   \item \code{v0 = 0.001} (spike SD = 0.03): aggressive sparsity
+#'   \item \code{v0 = 0.0001} (spike SD = 0.01): very aggressive, may over-sparsify
+#' }
 #'
 #' @seealso [ssjgl()], [plot_stability()]
 #' @export
 #'
 #' @examples
-#' # For normalized data with lambda1 = 0.1
-#' v0s <- make_v0_ladder(lambda1 = 0.1)
-#' range(v0s)
-#'
-#' # For raw data with lambda1 = 1
-#' v0s <- make_v0_ladder(lambda1 = 1, n_steps = 20, max_mult = 100)
-#' range(v0s)
-make_v0_ladder <- function(lambda1, n_steps = 15, max_mult = 200,
-                           start_sparse = TRUE) {
-  stopifnot(lambda1 > 0, n_steps >= 2, max_mult > 1)
-  denom <- lambda1 + seq(0, max_mult, length.out = n_steps)
-  v0s <- lambda1 / denom
+#' # Exploration ladder for lambda1 = 0.5
+#' v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 10)
+#' data.frame(v0 = v0s, spike_sd = sqrt(v0s),
+#'            eff_penalty = 0.5 / v0s)
+make_v0_ladder <- function(lambda1, n_steps = 10, min_ratio = 5,
+                           max_ratio = 500, start_sparse = TRUE) {
+  stopifnot(lambda1 > 0, n_steps >= 2, min_ratio >= 1, max_ratio > min_ratio)
+  log_ratios <- seq(log(min_ratio), log(max_ratio), length.out = n_steps)
+  v0s <- lambda1 / exp(log_ratios)
   if (start_sparse) {
-    v0s <- rev(sort(v0s))
+    v0s <- sort(v0s, decreasing = TRUE)
   } else {
     v0s <- sort(v0s)
   }
@@ -185,12 +183,22 @@ plot_stability <- function(fit, v0s, threshold = 0.5,
 
 #' Extract precision matrices from an ssjgl fit
 #'
+#' Equivalent to \code{coef(fit)}.
+#'
 #' @param fit An object of class \code{ssjgl}.
 #' @param v0_index Integer index into the v0 ladder. Default \code{NULL}
 #'   uses the last step.
 #'
 #' @return A list of K precision matrices (p x p).
 #' @export
+#'
+#' @examples
+#' sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+#' fit <- ssjgl(sim$data_list, penalty = "fused",
+#'              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'              v0s = 0.01, maxitr.em = 10, impute = FALSE)
+#' theta <- extract_precision(fit)
+#' dim(theta[[1]])
 extract_precision <- function(fit, v0_index = NULL) {
   if (is.null(v0_index)) v0_index <- length(fit$thetalist)
   fit$thetalist[[v0_index]]
@@ -209,6 +217,14 @@ extract_precision <- function(fit, v0_index = NULL) {
 #'
 #' @return A list of K binary adjacency matrices (p x p, 0 diagonal).
 #' @export
+#'
+#' @examples
+#' sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+#' fit <- ssjgl(sim$data_list, penalty = "fused",
+#'              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'              v0s = 0.01, maxitr.em = 10, impute = FALSE)
+#' adj <- extract_adjacency(fit, threshold = 0.5)
+#' sum(adj[[1]][upper.tri(adj[[1]])])  # edge count
 extract_adjacency <- function(fit, v0_index = NULL, threshold = 0.5) {
   if (is.null(v0_index)) v0_index <- length(fit$thetalist)
   prob_mat <- fit$problist1[[v0_index]]
@@ -224,12 +240,22 @@ extract_adjacency <- function(fit, v0_index = NULL, threshold = 0.5) {
 
 #' Extract partial correlation matrices from an ssjgl fit
 #'
+#' Equivalent to \code{fitted(fit)}.
+#'
 #' @param fit An object of class \code{ssjgl}.
 #' @param v0_index Integer index into the v0 ladder. Default \code{NULL}
 #'   uses the last step.
 #'
 #' @return A list of K partial correlation matrices (p x p).
 #' @export
+#'
+#' @examples
+#' sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+#' fit <- ssjgl(sim$data_list, penalty = "fused",
+#'              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'              v0s = 0.01, maxitr.em = 10, impute = FALSE)
+#' pcor <- extract_pcor(fit)
+#' range(pcor[[1]])  # values in [-1, 1]
 extract_pcor <- function(fit, v0_index = NULL) {
   if (is.null(v0_index)) v0_index <- length(fit$thetalist)
   lapply(fit$thetalist[[v0_index]], precision_to_pcor)
@@ -249,6 +275,15 @@ extract_pcor <- function(fit, v0_index = NULL) {
 #'       or NULL if not doubly spike-and-slab.}
 #'   }
 #' @export
+#'
+#' @examples
+#' sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+#' fit <- ssjgl(sim$data_list, penalty = "fused",
+#'              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'              v0s = 0.01, maxitr.em = 10, impute = FALSE)
+#' probs <- extract_probabilities(fit)
+#' # Edges with > 50% inclusion probability
+#' sum(probs$prob1[upper.tri(probs$prob1)] > 0.5)
 extract_probabilities <- function(fit, v0_index = NULL) {
   if (is.null(v0_index)) v0_index <- length(fit$thetalist)
   list(

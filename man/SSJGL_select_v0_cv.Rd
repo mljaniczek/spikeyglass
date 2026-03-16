@@ -57,3 +57,19 @@ Evaluates each v0 value in the ladder using K-fold cross-validation
 with Gaussian negative log-likelihood as the scoring criterion.
 Selects the v0 that minimizes the total CV loss.
 }
+\examples{
+\dontrun{
+sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
+cv_res <- SSJGL_select_v0_cv(
+  Y = sim$data_list,
+  v0s = c(0.1, 0.05, 0.01, 0.005, 0.001),
+  folds = 3,
+  penalty = "fused",
+  lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+  maxitr.em = 50, maxitr.jgl = 50,
+  normalize = TRUE, impute = FALSE
+)
+cv_res$v0_best
+cv_res$cv_score
+}
+}

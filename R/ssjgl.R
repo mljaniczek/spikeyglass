@@ -39,12 +39,14 @@
 #'   left at 1.
 #' @param v0s Numeric vector of spike variance parameters, typically
 #'   \strong{decreasing}. Smaller v0 = stronger shrinkage for unlikely edges.
-#'   The effective spike penalty is \code{lambda1/v0}, so \code{v0s} should be
-#'   scaled relative to \code{lambda1}. Use \code{\link{make_v0_ladder}} to
-#'   generate an appropriate sequence:
-#'   \code{v0s = make_v0_ladder(lambda1)}.
-#'   Default \code{seq(0.0001, 0.01, len = 10)} (appropriate only for small
-#'   lambda1 ~ 0.01; see \code{\link{make_v0_ladder}} for general use).
+#'   The spike standard deviation \code{sqrt(v0)} sets the scale below which
+#'   partial correlations are considered noise. For normalized data where
+#'   partial correlations live in [-1, 1], \code{v0 = 0.01} (spike SD = 0.1)
+#'   provides a natural noise/signal boundary. The default
+#'   \code{c(0.1, 0.03, 0.01)} provides a short warm-start ladder ending at
+#'   this target. See \code{vignette("parameter-exploration")} for guidance
+#'   on choosing v0 and the \code{\link{make_v0_ladder}} helper for generating
+#'   longer exploration ladders.
 #' @param doubly Logical. If \code{TRUE}, uses doubly spike-and-slab prior
 #'   with separate indicators for edge existence (delta) and cross-group
 #'   similarity (xi). Default \code{FALSE}.
@@ -98,11 +100,19 @@
 #' @seealso [make_v0_ladder()], [plot_path()], [plot_stability()],
 #'   [SSJGL_select_v0_cv()], [compute_metrics()]
 #' @export
-
-
+#'
+#' @examples
+#' sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+#' fit <- ssjgl(sim$data_list, penalty = "fused",
+#'              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'              v0s = c(0.1, 0.03, 0.01),
+#'              maxitr.em = 50, impute = FALSE)
+#' print(fit)
+#' adj <- extract_adjacency(fit, threshold = 0.5)
+#' sum(adj[[1]][upper.tri(adj[[1]])])  # estimated edge count
 ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
                   v1 = 1,
-                  v0s = seq(0.0001, 0.01, len = 10),
+                  v0s = c(0.1, 0.03, 0.01),
                   doubly=FALSE,
                   rho=1, a=1, b =1,
                   maxitr.em=500, tol.em=1e-4,
@@ -112,6 +122,30 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
                   normalize=FALSE,
                   c=0.1,
                   impute=TRUE){
+
+  # --- Input validation ---
+  if (!is.list(Y) || length(Y) < 1)
+    stop("Y must be a list of at least one data matrix")
+  if (!all(vapply(Y, is.matrix, logical(1))))
+    stop("Each element of Y must be a matrix")
+  p_vals <- vapply(Y, ncol, integer(1))
+  if (length(unique(p_vals)) > 1)
+    stop("All matrices in Y must have the same number of columns (p)")
+  penalty <- match.arg(penalty, c("fused", "group"))
+  if (!is.numeric(lambda0) || length(lambda0) != 1 || lambda0 <= 0)
+    stop("lambda0 must be a positive scalar")
+  if (!is.numeric(lambda1) || any(lambda1 < 0))
+    stop("lambda1 must be non-negative")
+  if (!is.numeric(lambda2) || any(lambda2 < 0))
+    stop("lambda2 must be non-negative")
+  if (!is.numeric(v0s) || any(v0s <= 0))
+    stop("v0s must be a positive numeric vector")
+  if (v1 <= 0)
+    stop("v1 must be positive")
+  if (a <= 0 || b <= 0)
+    stop("Beta prior parameters a and b must be positive")
+  if (!impute && any(vapply(Y, function(m) anyNA(m), logical(1))))
+    warning("Y contains NA values but impute = FALSE. NAs will propagate.")
 
   # decreasing v0, i.e., increasing penalty, warm start the 0 elements
   if(length(v0s) > 1){
@@ -172,6 +206,18 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
   for(k in 1:K){
     theta[[k]] <- theta_last[[k]] <- solve(cov(Y[[k]], use='complete.obs') + diag(c, p))
   }
+
+  # Precompute base covariance matrices (constant when impute=FALSE)
+  S_base <- vector("list", K)
+  for(k in 1:K){
+    ns_k <- dim(Y[[k]])[1]
+    S_base[[k]] <- cov(Y[[k]], use='complete.obs') * (ns_k - 1) / ns_k
+  }
+
+  # Determine if we can use the C++ EM inner loop
+  # C++ path handles: non-imputation case with K<=2 fused or any group penalty
+  use_cpp_em <- !impute && !(penalty == "fused" && K > 2)
+
   time <- rep(0, length(v0s))
   for(i in 1:length(v0s)){
     start_time <- Sys.time()
@@ -190,8 +236,6 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
     for(k in 1:K){
       theta[[k]] <- solve(cov(Y[[k]], use='complete.obs') + diag(c, p))
     }
-    # estep0 <- gete(p, theta, lambda1, lambda2, v0, v1, pi_delta, pi_xi, penalty, doubly)
-    # prob1 <- estep0$prob1
 
     for(k in 1:K){
       if(sum(unlist(tmp[[k]])) != 0 && sum(diag(theta_last[[k]])) > 1){
@@ -205,56 +249,90 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
     theta_last <- NULL
     if(length(klist) > 0) message(paste("Re-initiated to full precision matrices for group", paste(klist, collapse=",")))
 
-    for(itr in 1:maxitr.em){
-      if(diff < tol.em) break
-      # missing impute step
-      if(impute){
-        tmp <- getmissing(Y, theta, missed)
-        YY <- tmp$YY
-        addvar <- tmp$addvar
-      }else{
-        YY <- Y
-        addvar <- NULL
-      }
-      # E-step
-      estep <- gete(p, theta, lambda1, lambda2, v0, v1, pi_delta, pi_xi, penalty, doubly)
-      d1 <- estep$d1
-      d2 <- estep$d2
-      prob1 <- estep$prob1
-      prob2 <- estep$prob2
-      diag(prob1) <- 0
-      if(doubly) diag(prob2) <- 0
-      # Pi update: posterior mode of Beta(a + sum_edges(prob), b + n_edges - sum_edges(prob))
-      # prob1 is symmetric with 0 diagonal, so sum(prob1)/2 counts each edge once
-      n_edges <- p * (p - 1) / 2
-      pi_delta <- (a + sum(prob1) / 2 - 1) / (a + b + n_edges - 2)
-      pi_xi <- (a + sum(prob2) / 2 - 1) / (a + b + n_edges - 2)
-
-      # M-step
-      lambda1_current <- lambda1 * d1
-      if(doubly){
-        lambda2_current <- lambda2 * d2
-      }else{
-        lambda2_current <- lambda2 * d1
-        d2 <- prob2 <- NULL
-      }
-      mstep <- JGL.adaptive(YY, addvar = addvar, penalty=penalty,lambda0=lambda0, lambda1=lambda1_current,lambda2=lambda2_current,rho=rho, maxiter=maxitr.jgl,tol=tol.jgl,warm=NULL, warm.connected=NULL, return.whole.theta=TRUE, truncate=truncate, normalize=FALSE)
-      theta <- mstep$theta
-
-      # compare difference
-      if(!is.null(pi_delta_last)){
-        diff <- 0
-        # Convergence: max absolute change in any precision matrix entry
-        for(k in 1:length(theta_last)) diff <- max(diff, max(abs(theta_last[[k]] - theta[[k]])))
-        if(doubly){
-          cat(paste0("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab1: ", round(pi_delta, 4), "  p.slab2: ", round(pi_xi, 10), "\n"))
-        }else{
-          cat(paste0("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab: ", round(pi_delta, 4), "\n"))
-        }
-      }
-      pi_delta_last <- pi_delta
+    if (use_cpp_em) {
+      # === C++ EM inner loop ===
+      em_result <- ssjgl_em_inner_cpp(
+        S_list = S_base,
+        addvar_list = NULL,
+        n_vec = n,
+        theta_init = theta,
+        penalty = penalty,
+        lambda0 = lambda0,
+        lambda1 = lambda1,
+        lambda2 = lambda2,
+        v0 = v0, v1 = v1,
+        doubly = doubly,
+        rho = rho, a = a, b = b,
+        maxitr_em = maxitr.em, tol_em = tol.em,
+        maxitr_jgl = maxitr.jgl, tol_jgl = tol.jgl,
+        truncate = truncate
+      )
+      theta <- em_result$theta
+      prob1 <- em_result$prob1
+      prob2 <- em_result$prob2
+      d1 <- em_result$d1
+      d2 <- em_result$d2
+      pi_delta <- em_result$pi_delta
+      pi_xi <- em_result$pi_xi
+      itr <- em_result$itr
+      if (!doubly) { d2 <- prob2 <- NULL }
+      # Set theta_last so the next v0 step warm-start works correctly
       theta_last <- theta
+      # Build a minimal mstep-like object for trace_fit (connected info)
+      mstep <- list(theta = theta, connected = rep(TRUE, p))
+      class(mstep) <- "jgl"
+    } else {
+      # === R EM loop (used for imputation or K>2 fused) ===
+      for(itr in 1:maxitr.em){
+        if(diff < tol.em) break
+        # missing impute step
+        if(impute){
+          tmp <- getmissing(Y, theta, missed)
+          YY <- tmp$YY
+          addvar <- tmp$addvar
+        }else{
+          YY <- Y
+          addvar <- NULL
+        }
+        # E-step
+        estep <- gete(p, theta, lambda1, lambda2, v0, v1, pi_delta, pi_xi, penalty, doubly)
+        d1 <- estep$d1
+        d2 <- estep$d2
+        prob1 <- estep$prob1
+        prob2 <- estep$prob2
+        diag(prob1) <- 0
+        if(doubly) diag(prob2) <- 0
+        # Pi update
+        n_edges <- p * (p - 1) / 2
+        pi_delta <- (a + sum(prob1) / 2 - 1) / (a + b + n_edges - 2)
+        pi_xi <- (a + sum(prob2) / 2 - 1) / (a + b + n_edges - 2)
+
+        # M-step
+        lambda1_current <- lambda1 * d1
+        if(doubly){
+          lambda2_current <- lambda2 * d2
+        }else{
+          lambda2_current <- lambda2 * d1
+          d2 <- prob2 <- NULL
+        }
+        mstep <- JGL.adaptive(YY, addvar = addvar, penalty=penalty,lambda0=lambda0, lambda1=lambda1_current,lambda2=lambda2_current,rho=rho, maxiter=maxitr.jgl,tol=tol.jgl,warm=NULL, warm.connected=NULL, return.whole.theta=TRUE, truncate=truncate, normalize=FALSE)
+        theta <- mstep$theta
+
+        # compare difference
+        if(!is.null(pi_delta_last)){
+          diff <- 0
+          for(k in 1:length(theta_last)) diff <- max(diff, max(abs(theta_last[[k]] - theta[[k]])))
+          if(doubly){
+            cat(paste0("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab1: ", round(pi_delta, 4), "  p.slab2: ", round(pi_xi, 10), "\n"))
+          }else{
+            cat(paste0("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab: ", round(pi_delta, 4), "\n"))
+          }
+        }
+        pi_delta_last <- pi_delta
+        theta_last <- theta
+      }
     }
+
     trace_fit[[i]] <- mstep
     trace_prob[[i]] <- prob1
     trace_d[[i]] <- d1
@@ -275,9 +353,8 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
     for(i in 1:dim(missed)[1]){
       imputed[i] <- YY[[missed[i, 1]]][missed[i, 2], missed[i, 3]]
     }
-    imputed <- imputed + meanj[missed[, 3]]
+    imputed <- imputed + meanj[cbind(missed[, 1], missed[, 3])]
   }
-#MJ change: pilist was previously redundant
   out <- list(thetalist = trace_theta, pi1list = trace_pi1, pi2list = trace_pi2, fitlist = trace_fit, itrlist = trace_itr, problist1 = trace_prob, penlist1 = trace_d, problist2 = trace_prob_si, penlist2 = trace_d_si, timelist = time,
               imputed = imputed, missed = missed)
   class(out) = "ssjgl"

@@ -32,3 +32,16 @@ Evaluates how well the method recovers edges that differ between groups.
 Computes both graph-level differences (binary edge presence) and
 continuous-value differences (precision matrix entries).
 }
+\details{
+This is a legacy function from the reference implementation.
+}
+\examples{
+# Compare differential edges between two groups
+p <- 5
+est1 <- diag(p); est1[1,2] <- est1[2,1] <- -0.3
+est2 <- diag(p); est2[1,2] <- est2[2,1] <- 0  # edge absent in group 2
+graph1 <- (est1 != 0) * 1L; diag(graph1) <- 0L
+graph2 <- (est2 != 0) * 1L; diag(graph2) <- 0L
+getdiffmetric(list(est1, est2), list(est1, est2),
+              list(graph1, graph2), tol = 0.01)
+}

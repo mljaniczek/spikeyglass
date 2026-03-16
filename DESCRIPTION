@@ -31,4 +31,8 @@ Imports:
     igraph,
     JGL,
     MASS,
+    Rcpp,
     stats
+LinkingTo:
+    Rcpp,
+    RcppArmadillo

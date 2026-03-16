@@ -30,3 +30,9 @@ Given a score matrix (e.g., edge inclusion probabilities) and a binary
 truth matrix, computes TP, FP, TN, FN, TPR, FPR, precision, and F1
 at a given threshold. Only the upper triangle is used by default.
 }
+\examples{
+# Simulated score and truth matrices
+truth <- matrix(c(0,1,0, 1,0,1, 0,1,0), 3, 3)
+scores <- matrix(c(0,0.9,0.1, 0.9,0,0.8, 0.1,0.8,0), 3, 3)
+confusion_at_threshold(scores, truth, threshold = 0.5)
+}

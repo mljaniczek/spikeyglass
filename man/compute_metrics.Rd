@@ -38,3 +38,11 @@ Given an ssjgl fit object and the true adjacency/precision matrices,
 computes edge-level metrics (TPR, FPR, AUC) and estimation error
 (Frobenius norm, KL divergence).
 }
+\examples{
+sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
+fit <- ssjgl(sim$data_list, penalty = "fused",
+             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+             v0s = 0.01, maxitr.em = 10, impute = FALSE)
+m <- compute_metrics(fit, sim$adj_list, sim$Omega_list)
+m$overall
+}

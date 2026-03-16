@@ -16,8 +16,20 @@
 #' @param reverse Default FALSE. If want to reverse direction of plot.
 #' @param position Default "bottomright". For position of legend.
 #' @param ... other parameters passed in to base plot
-#' @return plot
+#' @return Invisible NULL. Called for side effect (plot).
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
+#' v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 5)
+#' fit <- ssjgl(sim$data_list, penalty = "fused",
+#'              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'              v0s = v0s, maxitr.em = 50, impute = FALSE)
+#' plot_path(v0s, fit, thres = 0.5,
+#'           xlab = expression(v[0]), ylab = "Precision entries",
+#'           main = c("Group 1", "Group 2"))
+#' }
 
 plot_path <- function(v0s, obj, thres = 0.5, normalize = FALSE,
                       xlab="", ylab = "", main = "",

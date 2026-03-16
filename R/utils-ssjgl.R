@@ -247,6 +247,11 @@ JGL.adaptive <-
 #' @return Scalar negative log-likelihood. Returns \code{Inf} if Theta is
 #'   not positive definite.
 #' @export
+#'
+#' @examples
+#' S <- matrix(c(1, 0.5, 0.5, 1), 2, 2)
+#' Theta <- solve(S)
+#' negloglik_Gaussian(S, Theta)  # should equal p = 2 (up to constant)
 negloglik_Gaussian <- function(S, Theta) {
   Theta <- as.matrix(Theta)
   # guard: determinant can fail if not PD
@@ -267,6 +272,10 @@ negloglik_Gaussian <- function(S, Theta) {
 #'   Returns a matrix of \code{NA}s if the diagonal contains non-positive
 #'   or non-finite values.
 #' @export
+#'
+#' @examples
+#' Theta <- matrix(c(2, -0.5, -0.5, 2), 2, 2)
+#' precision_to_pcor(Theta)  # partial correlation = 0.25
 precision_to_pcor <- function(Theta) {
   Theta <- as.matrix(Theta)
   d <- diag(Theta)
@@ -308,6 +317,22 @@ precision_to_pcor <- function(Theta) {
 #'     \item{seed}{Random seed used.}
 #'   }
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
+#' cv_res <- SSJGL_select_v0_cv(
+#'   Y = sim$data_list,
+#'   v0s = c(0.1, 0.05, 0.01, 0.005, 0.001),
+#'   folds = 3,
+#'   penalty = "fused",
+#'   lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'   maxitr.em = 50, maxitr.jgl = 50,
+#'   normalize = TRUE, impute = FALSE
+#' )
+#' cv_res$v0_best
+#' cv_res$cv_score
+#' }
 SSJGL_select_v0_cv <- function(
     Y, v0s,
     folds = 5,
@@ -447,6 +472,23 @@ SSJGL_select_v0_cv <- function(
 #'     \item{seed}{Random seed used.}
 #'   }
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
+#' boot_res <- SSJGL_final_with_pcor_CI(
+#'   Y = sim$data_list,
+#'   v0_best = 0.01,
+#'   B = 20,
+#'   penalty = "fused",
+#'   lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'   normalize = TRUE, impute = FALSE
+#' )
+#' # Edges where 95% CI excludes zero
+#' sig <- (boot_res$CI_lower[[1]] > 0) | (boot_res$CI_upper[[1]] < 0)
+#' diag(sig) <- FALSE
+#' sum(sig[upper.tri(sig)])
+#' }
 SSJGL_final_with_pcor_CI <- function(
     Y,
     v0_best,
@@ -615,6 +657,21 @@ SSJGL_final_with_pcor_CI <- function(
 #'     \item{final}{Output of \code{\link{SSJGL_final_with_pcor_CI}}.}
 #'   }
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
+#' res <- SSJGL_CV_final_pcorCI(
+#'   Y = sim$data_list,
+#'   v0s = c(0.05, 0.01, 0.005),
+#'   folds = 3, B = 20,
+#'   penalty = "fused",
+#'   lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+#'   normalize = TRUE, impute = FALSE
+#' )
+#' res$cv$v0_best
+#' res$final$pcor_hat[[1]][1:5, 1:5]
+#' }
 SSJGL_CV_final_pcorCI <- function(
     Y,
     v0s,
