@@ -40,3 +40,11 @@ vignettes/*.pdf
 .Rproj.user
 inst/doc
 docs
+
+# Compiled code
+src/*.o
+src/*.so
+src/*.dll
+
+# Test artifacts
+tests/testthat/Rplots.pdf
