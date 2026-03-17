@@ -1,0 +1,131 @@
+# Fit SSJGL at best v0 with bootstrap confidence intervals
+
+Fits the model on the full data at a single v0 value, then computes
+bootstrap confidence intervals for partial correlations using the
+percentile method.
+
+## Usage
+
+``` r
+SSJGL_final_with_pcor_CI(
+  Y,
+  v0_best,
+  B = 200,
+  ci_level = 0.95,
+  seed = 1,
+  penalty = "fused",
+  lambda0,
+  lambda1,
+  lambda2,
+  v1 = 1,
+  doubly = FALSE,
+  rho = 1,
+  a = 1,
+  b = 1,
+  maxitr.em = 500,
+  tol.em = 1e-04,
+  maxitr.jgl = 500,
+  tol.jgl = 1e-05,
+  truncate = 1e-05,
+  normalize = FALSE,
+  c = 0.1,
+  impute = TRUE,
+  verbose = TRUE
+)
+```
+
+## Arguments
+
+- Y:
+
+  List of K data matrices.
+
+- v0_best:
+
+  Scalar v0 value to use.
+
+- B:
+
+  Integer number of bootstrap samples. Default 200.
+
+- ci_level:
+
+  Numeric confidence level (e.g., 0.95). Default 0.95.
+
+- seed:
+
+  Integer random seed. Default 1.
+
+- penalty, lambda0, lambda1, lambda2, v1, doubly, rho, a, b, maxitr.em,
+  tol.em, maxitr.jgl, tol.jgl, truncate, normalize, c, impute:
+
+  Arguments passed to
+  [`ssjgl`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md).
+
+- verbose:
+
+  Logical. If TRUE, prints bootstrap progress. Default TRUE.
+
+## Value
+
+A list with elements:
+
+- v0_best:
+
+  The v0 value used.
+
+- fit:
+
+  The ssjgl fit on the full data.
+
+- theta_hat:
+
+  List of K estimated precision matrices.
+
+- pcor_hat:
+
+  List of K partial correlation matrices.
+
+- CI_lower:
+
+  List of K lower CI bound matrices (pcor).
+
+- CI_upper:
+
+  List of K upper CI bound matrices (pcor).
+
+- boot_pcor:
+
+  List of K arrays (p x p x B) of bootstrap pcors.
+
+- B:
+
+  Number of bootstrap samples.
+
+- ci_level:
+
+  Confidence level used.
+
+- seed:
+
+  Random seed used.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
+boot_res <- SSJGL_final_with_pcor_CI(
+  Y = sim$data_list,
+  v0_best = 0.01,
+  B = 20,
+  penalty = "fused",
+  lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
+  normalize = TRUE, impute = FALSE
+)
+# Edges where 95% CI excludes zero
+sig <- (boot_res$CI_lower[[1]] > 0) | (boot_res$CI_upper[[1]] < 0)
+diag(sig) <- FALSE
+sum(sig[upper.tri(sig)])
+} # }
+```

@@ -1,48 +1,44 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/404.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/LICENSE-text.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/articles/ssjgl.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/authors.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/index.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/news/index.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/reference/getdiffmetric.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/reference/getmetric.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/reference/plot_path.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/reference/simdat.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/reference/spikeyglass-package.html</loc>
-  </url>
-  <url>
-    <loc>https://mljaniczek.github.io/spikeyglass/reference/ssjgl.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://mljaniczek.github.io/spikeyglass/404.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/CLAUDE.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/LICENSE-text.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/LICENSE.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/articles/index.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/articles/parameter-exploration.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/articles/ssjgl.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/authors.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/index.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/news/index.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/SSJGL_CV_final_pcorCI.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/SSJGL_final_with_pcor_CI.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/SSJGL_select_v0_cv.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/admm_iters_adaptive_cpp.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/coef.ssjgl.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/compute_metrics.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/confusion_at_threshold.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/extract_adjacency.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/extract_pcor.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/extract_precision.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/extract_probabilities.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/fitted.ssjgl.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/getdiffmetric.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/getmetric.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/index.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/make_v0_ladder.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/negloglik_Gaussian.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/plot.ssjgl.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/plot_path.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/plot_roc.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/plot_stability.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/precision_to_pcor.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/print.ssjgl.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/print.summary.ssjgl.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/roc_auc.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/simdat.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/simulate_ssjgl_data.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/spikeyglass-package.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/ssjgl.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/ssjgl_em_inner_cpp.html</loc></url>
+<url><loc>https://mljaniczek.github.io/spikeyglass/reference/summary.ssjgl.html</loc></url>
 </urlset>
+

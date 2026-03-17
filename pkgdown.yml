@@ -1,10 +1,10 @@
-pandoc: 2.19.2
-pkgdown: 2.0.6
+pandoc: 3.1.11
+pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
+  parameter-exploration: parameter-exploration.html
   ssjgl: ssjgl.html
-last_built: 2022-12-05T19:30Z
+last_built: 2026-03-17T15:04Z
 urls:
   reference: https://mljaniczek.github.io/spikeyglass/reference
   article: https://mljaniczek.github.io/spikeyglass/articles
-

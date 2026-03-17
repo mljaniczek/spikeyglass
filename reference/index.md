@@ -1,0 +1,58 @@
+# Package index
+
+## All functions
+
+- [`SSJGL_CV_final_pcorCI()`](https://mljaniczek.github.io/spikeyglass/reference/SSJGL_CV_final_pcorCI.md)
+  : Full SSJGL workflow: CV selection + final fit with bootstrap CIs
+- [`SSJGL_final_with_pcor_CI()`](https://mljaniczek.github.io/spikeyglass/reference/SSJGL_final_with_pcor_CI.md)
+  : Fit SSJGL at best v0 with bootstrap confidence intervals
+- [`SSJGL_select_v0_cv()`](https://mljaniczek.github.io/spikeyglass/reference/SSJGL_select_v0_cv.md)
+  : Select v0 via K-fold cross-validation
+- [`coef(`*`<ssjgl>`*`)`](https://mljaniczek.github.io/spikeyglass/reference/coef.ssjgl.md)
+  : Extract precision matrices from an ssjgl fit
+- [`compute_metrics()`](https://mljaniczek.github.io/spikeyglass/reference/compute_metrics.md)
+  : Compute comprehensive evaluation metrics for an ssjgl fit
+- [`confusion_at_threshold()`](https://mljaniczek.github.io/spikeyglass/reference/confusion_at_threshold.md)
+  : Compute confusion matrix metrics at a threshold
+- [`extract_adjacency()`](https://mljaniczek.github.io/spikeyglass/reference/extract_adjacency.md)
+  : Extract binary adjacency matrices from an ssjgl fit
+- [`extract_pcor()`](https://mljaniczek.github.io/spikeyglass/reference/extract_pcor.md)
+  : Extract partial correlation matrices from an ssjgl fit
+- [`extract_precision()`](https://mljaniczek.github.io/spikeyglass/reference/extract_precision.md)
+  : Extract precision matrices from an ssjgl fit
+- [`extract_probabilities()`](https://mljaniczek.github.io/spikeyglass/reference/extract_probabilities.md)
+  : Extract edge inclusion probabilities from an ssjgl fit
+- [`fitted(`*`<ssjgl>`*`)`](https://mljaniczek.github.io/spikeyglass/reference/fitted.ssjgl.md)
+  : Extract partial correlations from an ssjgl fit
+- [`getdiffmetric()`](https://mljaniczek.github.io/spikeyglass/reference/getdiffmetric.md)
+  : Compute differential edge metrics across groups
+- [`getmetric()`](https://mljaniczek.github.io/spikeyglass/reference/getmetric.md)
+  : Compute graph recovery metrics (single group)
+- [`make_v0_ladder()`](https://mljaniczek.github.io/spikeyglass/reference/make_v0_ladder.md)
+  : Generate a v0 ladder for exploring sparsity levels
+- [`negloglik_Gaussian()`](https://mljaniczek.github.io/spikeyglass/reference/negloglik_Gaussian.md)
+  : Gaussian negative log-likelihood
+- [`plot(`*`<ssjgl>`*`)`](https://mljaniczek.github.io/spikeyglass/reference/plot.ssjgl.md)
+  : Plot partial correlation heatmaps from an ssjgl fit
+- [`plot_path()`](https://mljaniczek.github.io/spikeyglass/reference/plot_path.md)
+  : Plot the solution path
+- [`plot_roc()`](https://mljaniczek.github.io/spikeyglass/reference/plot_roc.md)
+  : Plot ROC curve
+- [`plot_stability()`](https://mljaniczek.github.io/spikeyglass/reference/plot_stability.md)
+  : Plot stability of graph structure across the v0 ladder
+- [`precision_to_pcor()`](https://mljaniczek.github.io/spikeyglass/reference/precision_to_pcor.md)
+  : Convert precision matrix to partial correlations
+- [`print(`*`<ssjgl>`*`)`](https://mljaniczek.github.io/spikeyglass/reference/print.ssjgl.md)
+  : Print an ssjgl object
+- [`print(`*`<summary.ssjgl>`*`)`](https://mljaniczek.github.io/spikeyglass/reference/print.summary.ssjgl.md)
+  : Print summary of ssjgl
+- [`roc_auc()`](https://mljaniczek.github.io/spikeyglass/reference/roc_auc.md)
+  : Compute ROC curve and AUC
+- [`simdat`](https://mljaniczek.github.io/spikeyglass/reference/simdat.md)
+  : Simulated Network Data
+- [`simulate_ssjgl_data()`](https://mljaniczek.github.io/spikeyglass/reference/simulate_ssjgl_data.md)
+  : Simulate data from known precision matrices for multiple groups
+- [`ssjgl()`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md)
+  : Bayesian Spike-and-Slab Joint Graphical Lasso
+- [`summary(`*`<ssjgl>`*`)`](https://mljaniczek.github.io/spikeyglass/reference/summary.ssjgl.md)
+  : Summarize an ssjgl object
