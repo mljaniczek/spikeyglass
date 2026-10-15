@@ -25,8 +25,6 @@ ssjgl(
   tol.em = 1e-04,
   maxitr.jgl = 500,
   tol.jgl = 1e-05,
-  warm = NULL,
-  warm.connected = NULL,
   truncate = 1e-05,
   normalize = FALSE,
   c = 0.1,
@@ -133,14 +131,6 @@ ssjgl(
 
   Numeric ADMM convergence tolerance. Default 1e-5.
 
-- warm:
-
-  List of K warm-start precision matrices. Default `NULL`.
-
-- warm.connected:
-
-  Logical vector for warm-starting block structure. Default `NULL`.
-
 - truncate:
 
   Numeric threshold below which entries are zeroed. Default 1e-5.
@@ -148,6 +138,10 @@ ssjgl(
 - normalize:
 
   Logical. If `TRUE`, mean-centers each variable. Default `FALSE`.
+  Centring does not change the estimates, because the sample covariance
+  is centred anyway. When missing values are imputed the data are always
+  centred internally (the conditional-mean imputation assumes mean zero)
+  and the imputed values are returned on the original scale.
 
 - c:
 
@@ -157,7 +151,10 @@ ssjgl(
 - impute:
 
   Logical. If `TRUE`, imputes `NA`s via conditional MVN at each EM
-  iteration. Default `TRUE`.
+  iteration. The M-step then uses the expected sample covariance given
+  the observed data, i.e. the covariance of the imputed data plus the
+  conditional covariance of the missing cells (Li et al., 2019,
+  supplement B). Default `TRUE`.
 
 ## Value
 
@@ -210,7 +207,8 @@ An object of class `"ssjgl"`, a list with elements:
 
 - imputed:
 
-  Numeric vector of imputed values, or NULL.
+  Numeric vector of imputed values on the original data scale (one per
+  row of `missed`), or NULL.
 
 - missed:
 

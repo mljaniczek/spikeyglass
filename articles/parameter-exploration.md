@@ -25,6 +25,7 @@ For **normalized data**, partial correlations live in \[-1, 1\]. This
 gives `v0` a direct interpretation on the partial correlation scale:
 
 ``` r
+
 v0_vals <- c(0.1, 0.01, 0.001, 0.0001)
 data.frame(
   v0 = v0_vals,
@@ -54,6 +55,7 @@ data.frame(
 We generate K=2 groups with p=15 variables using a band graph:
 
 ``` r
+
 library(spikeyglass)
 
 sim <- simulate_ssjgl_data(
@@ -72,6 +74,7 @@ recover. The banded structure creates edges on the first and second
 off-diagonals:
 
 ``` r
+
 # Compute true partial correlations from true precision matrices
 true_pcor <- lapply(sim$Omega_list, precision_to_pcor)
 
@@ -92,6 +95,7 @@ for (k in 1:2) {
 ![](parameter-exploration_files/figure-html/true_pcor-1.png)
 
 ``` r
+
 # Range of true partial correlations (off-diagonal)
 for (k in 1:2) {
   offdiag <- true_pcor[[k]][upper.tri(true_pcor[[k]])]
@@ -111,6 +115,7 @@ to generate a 10-step exploration ladder, then fit SSJGL across all
 steps:
 
 ``` r
+
 v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 10)
 cat("v0 ladder:\n")
 data.frame(
@@ -122,6 +127,7 @@ data.frame(
 ```
 
 ``` r
+
 fit <- ssjgl(
   Y = sim$data_list,
   penalty = "fused",
@@ -144,6 +150,7 @@ fit <- ssjgl(
 ### Edge counts and inclusion probabilities
 
 ``` r
+
 plot_stability(fit, v0s)
 ```
 
@@ -155,6 +162,7 @@ The solution path shows how individual precision matrix entries are
 shrunk as v0 decreases:
 
 ``` r
+
 plot_path(v0s, fit, thres = 0.5, normalize = FALSE,
           xlab = expression(v[0]), ylab = "Precision entries",
           main = c("Group 1", "Group 2"), par = c(1, 2))
@@ -170,6 +178,7 @@ along the ladder: the first step (weak sparsity), the third step
 aggressive).
 
 ``` r
+
 steps_to_show <- c(1, 3, 10)
 step_labels <- c("Step 1 (weak)", "Step 3 (moderate)", "Step 10 (aggressive)")
 
@@ -200,6 +209,7 @@ for (idx in seq_along(steps_to_show)) {
 ### What happens at each step
 
 ``` r
+
 for (idx in seq_along(steps_to_show)) {
   s <- steps_to_show[idx]
   prob_s <- fit$problist1[[s]]
@@ -245,6 +255,7 @@ for (idx in seq_along(steps_to_show)) {
 ### Comparing to truth
 
 ``` r
+
 cat("Performance at each v0 step:\n\n")
 #> Performance at each v0 step:
 cat(sprintf("%-25s %6s %6s %6s %6s %6s\n",
@@ -273,7 +284,7 @@ for (s in seq_along(v0s)) {
 #> Step  4 (v0 = 0.02154)  0.906  0.312  0.000  0.475      9
 #> Step  5 (v0 = 0.01292)  0.884  0.778  0.020  0.850     24
 #> Step  6 (v0 = 0.00774)  0.878  0.778  0.020  0.850     24
-#> Step  7 (v0 = 0.00464)  0.878  0.778  0.020  0.850     24
+#> Step  7 (v0 = 0.00464)  0.880  0.778  0.020  0.850     24
 #> Step  8 (v0 = 0.00278)  0.877  0.778  0.020  0.850     24
 #> Step  9 (v0 = 0.00167)  0.878  0.778  0.020  0.850     24
 #> Step 10 (v0 = 0.00100)  0.879  0.778  0.020  0.850     24
@@ -285,6 +296,7 @@ A direct comparison of the true and estimated partial correlation
 matrices at the recommended v0 step:
 
 ``` r
+
 # Use step 3 (moderate sparsity)
 best_step <- 3
 theta_best <- fit$thetalist[[best_step]]

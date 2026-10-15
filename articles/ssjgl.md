@@ -24,6 +24,7 @@ We generate a small synthetic example with K=2 groups and p=15 variables
 using a banded (AR-2) graph with a few differential edges.
 
 ``` r
+
 library(spikeyglass)
 
 sim <- simulate_ssjgl_data(
@@ -118,6 +119,7 @@ We use `normalize = TRUE` (data is not pre-standardized),
 `lambda1 = 0.5`, `lambda2 = 0.5`, and a short v0 ladder:
 
 ``` r
+
 fit <- ssjgl(
   Y = sim$data_list,
   penalty = "fused",
@@ -136,6 +138,7 @@ fit <- ssjgl(
 ```
 
 ``` r
+
 print(fit)
 #> Spike-and-Slab Joint Graphical Lasso (SSJGL)
 #>   Groups (K): 2
@@ -151,6 +154,7 @@ print(fit)
 ## Extract results
 
 ``` r
+
 # Precision matrices at the final v0 step
 theta_hat <- coef(fit)
 
@@ -176,6 +180,7 @@ cat("Estimated edges (Group 2):",
 Compare the estimated graphs to the truth using TPR, FPR, and AUC:
 
 ``` r
+
 metrics <- compute_metrics(
   fit = fit,
   true_adj = sim$adj_list,
@@ -214,6 +219,7 @@ for (k in 1:2) {
 ### ROC curve
 
 ``` r
+
 plot_roc(metrics$roc[[1]], main = "ROC Curve (Group 1)")
 ```
 
@@ -226,6 +232,7 @@ the best v0. This evaluates each v0 independently using held-out
 Gaussian negative log-likelihood:
 
 ``` r
+
 v0s_cv <- make_v0_ladder(lambda1 = 0.5, n_steps = 8)
 
 cv_res <- SSJGL_select_v0_cv(
@@ -246,6 +253,7 @@ The `SSJGL_final_with_pcor_CI` function computes bootstrap confidence
 intervals for partial correlations at a given v0:
 
 ``` r
+
 boot_res <- SSJGL_final_with_pcor_CI(
   Y = sim$data_list,
   v0_best = 0.01,
@@ -272,16 +280,16 @@ cat("Significant edges (Group 1):",
 
 ## Tuning summary
 
-| Parameter   | Role                   | Guidance                                        |
-|-------------|------------------------|-------------------------------------------------|
-| `lambda0`   | Diagonal penalty       | Use 1 (insensitive)                             |
-| `lambda1`   | Edge sparsity          | 0.01–0.1 (normalized), 0.5–1 (raw)              |
-| `lambda2`   | Cross-group similarity | Same scale as lambda1; ratio controls borrowing |
-| `v0s`       | Spike variance ladder  | `c(0.1, 0.03, 0.01)` for routine use            |
-| `v1`        | Slab variance          | Leave at 1                                      |
-| `a, b`      | Beta prior for pi      | `a = 1, b = p` for sparse prior                 |
-| `doubly`    | Doubly spike-and-slab  | TRUE recommended for multi-group                |
-| `normalize` | Mean-center variables  | TRUE unless data is pre-standardized            |
+| Parameter | Role | Guidance |
+|----|----|----|
+| `lambda0` | Diagonal penalty | Use 1 (insensitive) |
+| `lambda1` | Edge sparsity | 0.01–0.1 (normalized), 0.5–1 (raw) |
+| `lambda2` | Cross-group similarity | Same scale as lambda1; ratio controls borrowing |
+| `v0s` | Spike variance ladder | `c(0.1, 0.03, 0.01)` for routine use |
+| `v1` | Slab variance | Leave at 1 |
+| `a, b` | Beta prior for pi | `a = 1, b = p` for sparse prior |
+| `doubly` | Doubly spike-and-slab | TRUE recommended for multi-group |
+| `normalize` | Mean-center variables | TRUE unless data is pre-standardized |
 
 **Recommended workflow:**
 

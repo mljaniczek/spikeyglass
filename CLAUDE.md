@@ -112,22 +112,22 @@ cross-group similarity (xi), giving three configurations: (0,0), (1,0),
 
 ## Key Hyperparameter Defaults
 
-| Parameter   | Default                     | Notes                                              |
-|-------------|-----------------------------|----------------------------------------------------|
-| `v0s`       | `seq(0.0001, 0.01, len=10)` | Spike variance ladder (decreasing = more sparse)   |
-| `v1`        | 1                           | Slab variance                                      |
-| `lambda0`   | —                           | Diagonal penalty (user must specify)               |
-| `lambda1`   | —                           | Off-diagonal sparsity penalty (user must specify)  |
-| `lambda2`   | —                           | Cross-group similarity penalty (user must specify) |
-| `a`, `b`    | 1, 1                        | Beta prior for pi_delta. Use b=p for sparse prior  |
-| `doubly`    | FALSE                       | Whether to use doubly spike-and-slab               |
-| `maxitr.em` | 500                         | Max EM iterations per v0 step                      |
-| `tol.em`    | 1e-4                        | EM convergence tolerance (max abs change in Theta) |
+| Parameter | Default | Notes |
+|----|----|----|
+| `v0s` | `seq(0.0001, 0.01, len=10)` | Spike variance ladder (decreasing = more sparse) |
+| `v1` | 1 | Slab variance |
+| `lambda0` | — | Diagonal penalty (user must specify) |
+| `lambda1` | — | Off-diagonal sparsity penalty (user must specify) |
+| `lambda2` | — | Cross-group similarity penalty (user must specify) |
+| `a`, `b` | 1, 1 | Beta prior for pi_delta. Use b=p for sparse prior |
+| `doubly` | FALSE | Whether to use doubly spike-and-slab |
+| `maxitr.em` | 500 | Max EM iterations per v0 step |
+| `tol.em` | 1e-4 | EM convergence tolerance (max abs change in Theta) |
 
 ## Dependencies
 
-- `JGL` — Core ADMM routines (flsa2, dsgl, penalty.as.matrix,
-  admm.iters.unconnected)
+- `JGL` — Core ADMM routines (flsa2, dsgl, flsa.general,
+  penalty.as.matrix)
 - `igraph` — Block structure detection in screening step
 - `MASS` — `mvrnorm()` for data simulation
 - `graphics`, `stats` — Base R plotting and statistics
@@ -164,11 +164,12 @@ R CMD INSTALL .
     consistent tolerance semantics.
 
 3.  **JGL internal access**: Package uses `JGL:::` to access unexported
-    functions (flsa2, dsgl, gcrit, crit, penalty.as.matrix,
-    admm.iters.unconnected). These may break if JGL changes internals.
-    Locations: `R/utils-ssjgl.R` (4 uses: lines ~167, 189, 192, 193) and
-    `R/utils-admm.R` (3 uses in R fallback path). The C++ ADMM path
-    reimplements flsa2 and dsgl, reducing dependence for K\<=2 cases.
+    functions (flsa2, dsgl, flsa.general, penalty.as.matrix). These may
+    break if JGL changes internals. Locations: `R/utils-ssjgl.R`
+    (`penalty.as.matrix`) and `R/utils-admm.R` (R fallback ADMM for
+    fused K\>2). `admm.iters.unconnected` is vendored as
+    `admm.iters.unconnected.S()` in `R/utils-admm.R`. The C++ ADMM path
+    reimplements flsa2 and dsgl.
 
 4.  **Imputation meanj indexing (fixed)**: `ssjgl.R` line 356 used
     `meanj[missed[, 3]]` which indexes a (K x p) matrix with a single
@@ -176,21 +177,22 @@ R CMD INSTALL .
     `meanj[cbind(missed[, 1], missed[, 3])]` for correct group-specific
     mean restoration.
 
+5.  **Correctness fixes (2026-10, see NEWS.md)**: lambda = 0 drops its
+    prior terms in the E-step (`laplace_logprior()`); `getmissing()`
+    uses `drop = FALSE`; data are always centred internally when
+    imputing, and `imputed` is returned on the original scale; the
+    M-step ADMM takes S matrices (S + addvar/n with missing data, per Li
+    et al. 2019 supplement B); `warm`/`warm.connected` were removed from
+    [`ssjgl()`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md).
+    `tests/testthat/test-bugfixes.R` checks that the C++ and R EM paths
+    agree.
+
 ## TODO (low priority)
 
-- **gete() log-sum-exp**: The simple (non-doubly) E-step in `gete()`
-  (`R/utils-gete.R`) does not use the log-sum-exp trick for numerical
-  stability. The doubly version `gete.doubly()` does. With the new
-  default `v0s = c(0.1, 0.03, 0.01)` this is unlikely to cause
-  underflow, but would matter at extreme v0 values (\<\< 0.001).
-  Consider adding log-sum-exp to `gete()` if users report numerical
-  issues.
-
 - **JGL ::: fragility**: Long-term, consider vendoring the 4-5 JGL
-  internal functions (flsa2, dsgl, penalty.as.matrix,
-  admm.iters.unconnected) directly into spikeyglass to remove the
-  fragile `:::` dependency. The C++ ADMM path already reimplements the
-  core routines for K\<=2.
+  internal functions (flsa2, dsgl, flsa.general, penalty.as.matrix)
+  directly into spikeyglass to remove the fragile `:::` dependency. The
+  C++ ADMM path already reimplements the core routines for K\<=2.
 
 ## Cross-project Notes (multiGGMr)
 
