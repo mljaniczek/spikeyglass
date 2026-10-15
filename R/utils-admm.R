@@ -5,13 +5,16 @@
 #' via RcppArmadillo for K=2 fused penalty (the most common case), with
 #' an R fallback for K>2 fused penalty (which requires JGL:::flsa.general).
 #'
+#' Takes the list of K (biased) sample covariance matrices \code{S} rather
+#' than the data, so that with missing data the M-step can use the expected
+#' covariance E[S | observed] (Li et al. 2019, supplement B).
+#'
 #' @keywords internal
 #' @noRd
-admm.iters.adaptive = function(Y, lam1, lam2, penalty = "fused", rho = 1,
+admm.iters.adaptive = function(S, lam1, lam2, penalty = "fused", rho = 1,
                                 rho.increment = 1, weights, maxiter = 1000,
                                 tol = 1e-5, warm = NULL) {
-  K <- length(Y)
-  p <- dim(Y[[1]])[2]
+  K <- length(S)
 
   # Use C++ for K=2 fused or any group penalty (most common cases)
   # Fall back to R for K>2 fused (needs JGL:::flsa.general)
@@ -19,7 +22,7 @@ admm.iters.adaptive = function(Y, lam1, lam2, penalty = "fused", rho = 1,
 
   if (use_cpp) {
     result <- admm_iters_adaptive_cpp(
-      Y_list = Y,
+      S_list = S,
       lam1 = lam1,
       lam2 = lam2,
       penalty = penalty,
@@ -34,22 +37,19 @@ admm.iters.adaptive = function(Y, lam1, lam2, penalty = "fused", rho = 1,
   }
 
   # R fallback for K>2 fused penalty
-  admm.iters.adaptive.R(Y, lam1, lam2, penalty, rho, rho.increment,
+  admm.iters.adaptive.R(S, lam1, lam2, penalty, rho, rho.increment,
                          weights, maxiter, tol, warm)
 }
 
 #' R fallback ADMM for K>2 fused penalty (internal)
 #' @keywords internal
 #' @noRd
-admm.iters.adaptive.R = function(Y, lam1, lam2, penalty = "fused", rho = 1,
+admm.iters.adaptive.R = function(S, lam1, lam2, penalty = "fused", rho = 1,
                                   rho.increment = 1, weights, maxiter = 1000,
                                   tol = 1e-5, warm = NULL) {
-  K = length(Y)
-  p = dim(Y[[1]])[2]
+  K = length(S)
+  p = dim(S[[1]])[1]
   n = weights
-
-  ns = c(); for(k in 1:K){ns[k] = dim(Y[[k]])[1]}
-  S = list(); for(k in 1:K){S[[k]] = cov(Y[[k]])*(ns[k]-1)/ns[k]}
 
   theta = list()
   if(is.null(warm)){
@@ -99,4 +99,48 @@ admm.iters.adaptive.R = function(Y, lam1, lam2, penalty = "fused", rho = 1,
   diff = 0; for(k in 1:K){diff = diff + sum(abs(theta[[k]]-Z[[k]]))}
   out = list(theta=theta,Z=Z,diff=diff,iters=iter)
   return(out)
+}
+
+#' ADMM for unconnected (singleton) nodes (internal)
+#'
+#' Same iterations as \code{JGL:::admm.iters.unconnected} with
+#' \code{lambda2 = 0} (which is how \code{JGL.adaptive} calls it), but takes
+#' the vector of variances \code{S[[k]]} instead of the data. With
+#' \code{lambda2 = 0} the fused and group Z-updates both reduce to
+#' soft-thresholding at \code{lambda0/rho}.
+#'
+#' @param S List of K numeric vectors of (biased) variances.
+#' @return List of K vectors: the diagonal precision entries (JGL's \code{Z}).
+#' @keywords internal
+#' @noRd
+admm.iters.unconnected.S = function(S, lambda0, rho = 1, rho.increment = 1,
+                                    weights, maxiter = 1000, tol = 1e-5) {
+  K = length(S)
+  p = length(S[[1]])
+  n = weights
+  theta = list(); for(k in 1:K){theta[[k]] = 1/S[[k]]}
+  Z = list(); for(k in 1:K){Z[[k]] = rep(0, p)}
+  W = list(); for(k in 1:K){W[[k]] = rep(0, p)}
+
+  iter = 0
+  diff_value = 10
+  while((iter==0) || (iter<maxiter && diff_value > tol))
+  {
+    theta.prev = theta
+    for(k in 1:K){
+      B = n[k]*S[[k]] - rho*(Z[[k]] - W[[k]])
+      theta[[k]] = 1/(2*rho) * (-B + sqrt(B^2 + 4*rho*n[k]))
+    }
+    for(k in 1:K){
+      A = theta[[k]] + W[[k]]
+      Z[[k]] = sign(A) * pmax(abs(A) - lambda0/rho, 0)
+    }
+    for(k in 1:K){W[[k]] = W[[k]] + (theta[[k]] - Z[[k]])}
+
+    iter = iter + 1
+    diff_value = 0
+    for(k in 1:K) {diff_value = diff_value + sum(abs(theta[[k]] - theta.prev[[k]])) / sum(abs(theta.prev[[k]]))}
+    rho = rho*rho.increment
+  }
+  Z
 }

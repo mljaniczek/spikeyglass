@@ -12,12 +12,12 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // admm_iters_adaptive_cpp
-List admm_iters_adaptive_cpp(List Y_list, arma::mat lam1, arma::mat lam2, std::string penalty, double rho, double rho_increment, NumericVector weights, int maxiter, double tol, Nullable<List> warm_list);
-RcppExport SEXP _spikeyglass_admm_iters_adaptive_cpp(SEXP Y_listSEXP, SEXP lam1SEXP, SEXP lam2SEXP, SEXP penaltySEXP, SEXP rhoSEXP, SEXP rho_incrementSEXP, SEXP weightsSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP warm_listSEXP) {
+List admm_iters_adaptive_cpp(List S_list, arma::mat lam1, arma::mat lam2, std::string penalty, double rho, double rho_increment, NumericVector weights, int maxiter, double tol, Nullable<List> warm_list);
+RcppExport SEXP _spikeyglass_admm_iters_adaptive_cpp(SEXP S_listSEXP, SEXP lam1SEXP, SEXP lam2SEXP, SEXP penaltySEXP, SEXP rhoSEXP, SEXP rho_incrementSEXP, SEXP weightsSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP warm_listSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List >::type Y_list(Y_listSEXP);
+    Rcpp::traits::input_parameter< List >::type S_list(S_listSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type lam1(lam1SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type lam2(lam2SEXP);
     Rcpp::traits::input_parameter< std::string >::type penalty(penaltySEXP);
@@ -27,7 +27,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Nullable<List> >::type warm_list(warm_listSEXP);
-    rcpp_result_gen = Rcpp::wrap(admm_iters_adaptive_cpp(Y_list, lam1, lam2, penalty, rho, rho_increment, weights, maxiter, tol, warm_list));
+    rcpp_result_gen = Rcpp::wrap(admm_iters_adaptive_cpp(S_list, lam1, lam2, penalty, rho, rho_increment, weights, maxiter, tol, warm_list));
     return rcpp_result_gen;
 END_RCPP
 }

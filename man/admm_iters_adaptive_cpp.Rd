@@ -5,7 +5,7 @@
 \title{ADMM iterations with adaptive penalties (C++ implementation)}
 \usage{
 admm_iters_adaptive_cpp(
-  Y_list,
+  S_list,
   lam1,
   lam2,
   penalty,
@@ -18,7 +18,8 @@ admm_iters_adaptive_cpp(
 )
 }
 \arguments{
-\item{Y_list}{List of K data matrices (n_k x p)}
+\item{S_list}{List of K (biased) sample covariance matrices (p x p). With
+missing data these are the expected covariances E(S given observed data).}
 
 \item{lam1}{Matrix-valued lambda1 penalty (p x p)}
 
