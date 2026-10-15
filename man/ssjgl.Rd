@@ -20,8 +20,6 @@ ssjgl(
   tol.em = 1e-04,
   maxitr.jgl = 500,
   tol.jgl = 1e-05,
-  warm = NULL,
-  warm.connected = NULL,
   truncate = 1e-05,
   normalize = FALSE,
   c = 0.1,
@@ -92,22 +90,24 @@ a sparse prior.}
 
 \item{tol.jgl}{Numeric ADMM convergence tolerance. Default 1e-5.}
 
-\item{warm}{List of K warm-start precision matrices. Default \code{NULL}.}
-
-\item{warm.connected}{Logical vector for warm-starting block structure.
-Default \code{NULL}.}
-
 \item{truncate}{Numeric threshold below which entries are zeroed. Default
 1e-5.}
 
 \item{normalize}{Logical. If \code{TRUE}, mean-centers each variable.
-Default \code{FALSE}.}
+Default \code{FALSE}. Centring does not change the estimates, because
+the sample covariance is centred anyway. When missing values are imputed
+the data are always centred internally (the conditional-mean imputation
+assumes mean zero) and the imputed values are returned on the original
+scale.}
 
 \item{c}{Numeric diagonal regularization for initial precision estimate.
 Default 0.1.}
 
 \item{impute}{Logical. If \code{TRUE}, imputes \code{NA}s via conditional
-MVN at each EM iteration. Default \code{TRUE}.}
+MVN at each EM iteration. The M-step then uses the expected sample
+covariance given the observed data, i.e. the covariance of the imputed
+data plus the conditional covariance of the missing cells (Li et al.,
+2019, supplement B). Default \code{TRUE}.}
 }
 \value{
 An object of class \code{"ssjgl"}, a list with elements:
@@ -129,7 +129,8 @@ P(xi=1). NULL if \code{doubly = FALSE}.}
 \item{penlist2}{List of p x p adaptive penalty weights for lambda2.
 NULL if \code{doubly = FALSE}.}
 \item{timelist}{Numeric vector of wall-clock seconds per v0 step.}
-\item{imputed}{Numeric vector of imputed values, or NULL.}
+\item{imputed}{Numeric vector of imputed values on the original data
+scale (one per row of \code{missed}), or NULL.}
 \item{missed}{Matrix of (group, row, col) for missing values, or NULL.}
 }
 }

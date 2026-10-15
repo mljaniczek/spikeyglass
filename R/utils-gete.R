@@ -7,6 +7,9 @@
 #' For the single spike-and-slab case, computes P(delta=1|Omega, pi_delta)
 #' for each edge (j,k). For the doubly spike-and-slab case, dispatches to
 #' \code{gete.doubly} which computes three-way probabilities.
+#'
+#' A penalty with \code{lambda = 0} contributes nothing to the prior, so its
+#' terms are omitted (otherwise \code{log(0)} makes every PIP 0).
 #' @keywords internal
 #' @noRd
 
@@ -37,11 +40,16 @@ gete <- function(p, theta, lambda1, lambda2, v0, v1, pi_delta, pi_xi, penalty, d
     abssum <- abssum + abs(theta[[i]])
   }
 
-  logp0 <- -lambda1/v0 * abssum + log(lambda1/v0) * G - lambda2/v0 * pen + log(lambda2/v0) * const
-  logp1 <- -lambda1/v1 * abssum + log(lambda1/v1) * G - lambda2/v1 * pen + log(lambda2/v1) * const
+  logp0 <- laplace_logprior(lambda1, v0, abssum, G) + laplace_logprior(lambda2, v0, pen, const) + log(1-pi_delta)
+  logp1 <- laplace_logprior(lambda1, v1, abssum, G) + laplace_logprior(lambda2, v1, pen, const) + log(pi_delta)
 
-  prob <- exp(logp1) * pi_delta / (exp(logp0) * (1-pi_delta) + exp(logp1) * pi_delta)
+  # log-sum-exp trick
+  mx <- pmax(logp0, logp1)
+  logz <- mx + log(exp(logp0 - mx) + exp(logp1 - mx))
+  prob <- exp(logp1 - logz)
+  prob[is.nan(prob)] <- 0
   d <- (1-prob)/v0 + prob/v1
+  d[is.nan(d)] <- 1/v0
   diag(prob) <- 0
   diag(d) <- 0
 
@@ -80,11 +88,11 @@ gete.doubly <- function(p, theta, lambda1, lambda2, v0, v1, pi_delta, pi_xi, pen
   prob <- array(NA, dim=c(p,p,3))
 
   # 00
-  prob[,,1] <- -lambda1/v0 * abssum + log(lambda1/v0) * G - lambda2/v0 * pen + log(lambda2/v0) * const + log(1-pi_delta) + log(1-pi_xi)
+  prob[,,1] <- laplace_logprior(lambda1, v0, abssum, G) + laplace_logprior(lambda2, v0, pen, const) + log(1-pi_delta) + log(1-pi_xi)
   # 10
-  prob[,,2] <- -lambda1/v1 * abssum + log(lambda1/v1) * G - lambda2/v0 * pen + log(lambda2/v0) * const + log(pi_delta) + log(1-pi_xi)
+  prob[,,2] <- laplace_logprior(lambda1, v1, abssum, G) + laplace_logprior(lambda2, v0, pen, const) + log(pi_delta) + log(1-pi_xi)
   # 11
-  prob[,,3] <- -lambda1/v1 * abssum + log(lambda1/v1) * G - lambda2/v1 * pen + log(lambda2/v1) * const + log(pi_delta) + log(pi_xi)
+  prob[,,3] <- laplace_logprior(lambda1, v1, abssum, G) + laplace_logprior(lambda2, v1, pen, const) + log(pi_delta) + log(pi_xi)
 
   # z <- apply(prob, c(1,2), function(x) sum(exp(x)))
   # for(i in 1:3) prob[,,i] <- exp(prob[,,i]) / z
@@ -120,6 +128,14 @@ gete.doubly <- function(p, theta, lambda1, lambda2, v0, v1, pi_delta, pi_xi, pen
   return(out)
 }
 
+# Log of the Laplace prior kernel (lambda/v)^cnt * exp(-lambda/v * x). With
+# lambda = 0 the penalty is absent, so the term is dropped rather than giving
+# log(0) = -Inf in every mixture component.
+laplace_logprior <- function(lambda, v, x, cnt){
+  if(all(lambda == 0)) return(0)
+  -lambda/v * x + log(lambda/v) * cnt
+}
+
 # missed has three cols: k, i, j
 getmissing <- function(Y, theta, missed){
   YY <- Y
@@ -128,7 +144,7 @@ getmissing <- function(Y, theta, missed){
     addvar[[i]] <- matrix(0, dim(Y[[i]])[2], dim(Y[[i]])[2])
   }
   for(k in unique(missed[,1])){
-    tmp <- missed[missed[,1] == k, ]
+    tmp <- missed[missed[,1] == k, , drop = FALSE]
     cov <- solve(theta[[k]])
 
     for(i in unique(tmp[, 2])){

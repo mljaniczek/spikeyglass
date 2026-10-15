@@ -3,7 +3,8 @@
 
 #' ADMM iterations with adaptive penalties (C++ implementation)
 #'
-#' @param Y_list List of K data matrices (n_k x p)
+#' @param S_list List of K (biased) sample covariance matrices (p x p). With
+#'   missing data these are the expected covariances E(S given observed data).
 #' @param lam1 Matrix-valued lambda1 penalty (p x p)
 #' @param lam2 Matrix-valued lambda2 penalty (p x p)
 #' @param penalty String: "fused" or "group"
@@ -15,8 +16,8 @@
 #' @param warm_list Optional list of K warm-start precision matrices (or R_NilValue)
 #' @return List with theta (list of K matrices), Z (list of K matrices), diff, iters
 #' @keywords internal
-admm_iters_adaptive_cpp <- function(Y_list, lam1, lam2, penalty, rho, rho_increment, weights, maxiter, tol, warm_list = NULL) {
-    .Call(`_spikeyglass_admm_iters_adaptive_cpp`, Y_list, lam1, lam2, penalty, rho, rho_increment, weights, maxiter, tol, warm_list)
+admm_iters_adaptive_cpp <- function(S_list, lam1, lam2, penalty, rho, rho_increment, weights, maxiter, tol, warm_list = NULL) {
+    .Call(`_spikeyglass_admm_iters_adaptive_cpp`, S_list, lam1, lam2, penalty, rho, rho_increment, weights, maxiter, tol, warm_list)
 }
 
 #' Full EM inner loop in C++ (E-step + block detection + ADMM)

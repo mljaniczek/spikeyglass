@@ -181,7 +181,8 @@ static List admm_with_S(const std::vector<mat>& S, const vec& n,
 
 //' ADMM iterations with adaptive penalties (C++ implementation)
 //'
-//' @param Y_list List of K data matrices (n_k x p)
+//' @param S_list List of K (biased) sample covariance matrices (p x p). With
+//'   missing data these are the expected covariances E(S given observed data).
 //' @param lam1 Matrix-valued lambda1 penalty (p x p)
 //' @param lam2 Matrix-valued lambda2 penalty (p x p)
 //' @param penalty String: "fused" or "group"
@@ -194,25 +195,19 @@ static List admm_with_S(const std::vector<mat>& S, const vec& n,
 //' @return List with theta (list of K matrices), Z (list of K matrices), diff, iters
 //' @keywords internal
 // [[Rcpp::export]]
-List admm_iters_adaptive_cpp(List Y_list, arma::mat lam1, arma::mat lam2,
+List admm_iters_adaptive_cpp(List S_list, arma::mat lam1, arma::mat lam2,
                              std::string penalty, double rho,
                              double rho_increment, NumericVector weights,
                              int maxiter, double tol,
                              Nullable<List> warm_list = R_NilValue) {
-  int K = Y_list.size();
-  mat Y0 = as<mat>(Y_list[0]);
-  int p = Y0.n_cols;
-
-  // Compute sample covariances
+  int K = S_list.size();
   std::vector<mat> S(K);
   vec n(K);
   for (int k = 0; k < K; k++) {
-    mat Yk = as<mat>(Y_list[k]);
-    int nk = Yk.n_rows;
+    S[k] = as<mat>(S_list[k]);
     n(k) = weights[k];
-    mat centered = Yk.each_row() - mean(Yk, 0);
-    S[k] = (centered.t() * centered) / (double)nk;
   }
+  int p = S[0].n_rows;
 
   std::vector<mat>* warm_ptr = nullptr;
   std::vector<mat> warm_mats;
@@ -229,6 +224,15 @@ List admm_iters_adaptive_cpp(List Y_list, arma::mat lam1, arma::mat lam2,
                      rho_increment, maxiter, tol, warm_ptr);
 }
 
+
+// Log of the Laplace prior kernel (lambda/v)^cnt * exp(-lambda/v * x).
+// With lambda = 0 the penalty is absent, so the term is dropped rather than
+// giving log(0) = -Inf in every mixture component.
+static inline mat laplace_logprior(double lambda, double v, const mat& x,
+                                   double cnt) {
+  if (lambda == 0.0) return zeros(size(x));
+  return -lambda / v * x + std::log(lambda / v) * cnt;
+}
 
 // E-step: compute posterior inclusion probabilities and adaptive penalty weights
 // Single spike-and-slab (not doubly)
@@ -261,10 +265,10 @@ static void gete_cpp(int p, const std::vector<mat>& theta,
     abssum += abs(theta[i]);
   }
 
-  mat logp0 = -lambda1/v0 * abssum + std::log(lambda1/v0) * G
-              - lambda2/v0 * pen + std::log(lambda2/v0) * fused_const;
-  mat logp1 = -lambda1/v1 * abssum + std::log(lambda1/v1) * G
-              - lambda2/v1 * pen + std::log(lambda2/v1) * fused_const;
+  mat logp0 = laplace_logprior(lambda1, v0, abssum, G)
+              + laplace_logprior(lambda2, v0, pen, fused_const);
+  mat logp1 = laplace_logprior(lambda1, v1, abssum, G)
+              + laplace_logprior(lambda2, v1, pen, fused_const);
 
   // prob = exp(logp1) * pi / (exp(logp0) * (1-pi) + exp(logp1) * pi)
   // Use log-space for numerical stability
@@ -322,14 +326,14 @@ static void gete_doubly_cpp(int p, const std::vector<mat>& theta,
   }
 
   // Three log-probabilities: (0,0), (1,0), (1,1)
-  mat lp00 = -lambda1/v0 * abssum + std::log(lambda1/v0) * G
-             - lambda2/v0 * pen + std::log(lambda2/v0) * fused_const
+  mat lp00 = laplace_logprior(lambda1, v0, abssum, G)
+             + laplace_logprior(lambda2, v0, pen, fused_const)
              + std::log(1.0 - pi_delta) + std::log(1.0 - pi_xi);
-  mat lp10 = -lambda1/v1 * abssum + std::log(lambda1/v1) * G
-             - lambda2/v0 * pen + std::log(lambda2/v0) * fused_const
+  mat lp10 = laplace_logprior(lambda1, v1, abssum, G)
+             + laplace_logprior(lambda2, v0, pen, fused_const)
              + std::log(pi_delta) + std::log(1.0 - pi_xi);
-  mat lp11 = -lambda1/v1 * abssum + std::log(lambda1/v1) * G
-             - lambda2/v1 * pen + std::log(lambda2/v1) * fused_const
+  mat lp11 = laplace_logprior(lambda1, v1, abssum, G)
+             + laplace_logprior(lambda2, v1, pen, fused_const)
              + std::log(pi_delta) + std::log(pi_xi);
 
   // Log-sum-exp normalization
@@ -575,12 +579,12 @@ List ssjgl_em_inner_cpp(List S_list, Nullable<List> addvar_list,
       theta_new[k] = zeros(p, p);
     }
 
-    // Handle singletons: diagonal = 1/(S_kk + lambda0)
+    // Handle singletons: diagonal = 1/(S_kk + lambda0/n_k)
     for (int idx : singletons) {
       for (int k = 0; k < K; k++) {
         double s_diag = S[k](idx, idx);
-        // Simple: theta = 1/(s + lambda0) for unconnected nodes
-        // This matches JGL:::admm.iters.unconnected for scalars
+        // Closed form theta = 1/(s + lambda0/n_k) for unconnected nodes:
+        // the fixed point of JGL:::admm.iters.unconnected for scalars
         if (s_diag + lambda0 > 0) {
           theta_new[k](idx, idx) = 1.0 / (s_diag + lambda0 / n(k));
         }

@@ -2,11 +2,16 @@
 #'
 #' Adapted from JGL package (v2.3) to accept matrix-valued lambda1/lambda2
 #' penalties for adaptive edge-specific penalization from the SSJGL E-step.
+#'
+#' With missing data, \code{addvar} holds the summed conditional covariances
+#' of the imputed cells. The M-step then uses E[S | observed] =
+#' S(imputed) + addvar/n, both for block screening and inside the ADMM
+#' (Li et al. 2019, supplement B).
 #' @keywords internal
 #' @noRd
 
 JGL.adaptive <-
-  function(Y, addvar = NULL, penalty="fused",lambda0,lambda1,lambda2,rho=1,weights="sample.size", maxiter=500,tol=1e-5,warm=NULL, warm.connected=NULL, return.whole.theta=FALSE, truncate=0, normalize=FALSE)
+  function(Y, addvar = NULL, penalty="fused",lambda0,lambda1,lambda2,rho=1,weights="sample.size", maxiter=500,tol=1e-5,warm=NULL, return.whole.theta=FALSE, truncate=0, normalize=FALSE)
   {
     ## initialize:
     p = dim(Y[[1]])[2]
@@ -50,13 +55,6 @@ JGL.adaptive <-
       ntemp = dim(Y[[k]])[1]
       S[[k]] = cov(Y[[k]][,connected])*(ntemp-1)/ntemp
       if(!is.null(addvar)) S[[k]] <- S[[k]] + addvar[[k]]/ntemp
-      # if warm.connected specified, make those variance to be 0.
-      if(!is.null(warm.connected)){
-        dd <- diag(S[[k]])
-        S[[k]][, !warm.connected] <- 0
-        S[[k]][!warm.connected, ] <- 0
-        diag(S[[k]]) <- dd
-      }
     }
 
     # if a penalty matrix is entered, only take its appropriate rows:
@@ -142,9 +140,9 @@ JGL.adaptive <-
     }
 
     ## get solution on unconnected nodes
-    # data:
-    Yu = list()
-    for(k in 1:K){Yu[[k]] = Y[[k]][,unconnected]}
+    # variances (including addvar, if any):
+    Su = list()
+    for(k in 1:K){Su[[k]] = diag(S[[k]])[unconnected]}
     # penalty vectors:
     # note: for admm.iters.unconnected, we use the penalize.diagonal argument before calling the function.  for admm.iters, we use it IN the function.
 
@@ -160,11 +158,10 @@ JGL.adaptive <-
     #### }
     # get the unconnected portion of theta:
     lam1.unconnected <- lambda0
-    lam2.unconnected <- 0
 
     if(sum(unconnected)>0)
     {
-      theta.unconnected = JGL:::admm.iters.unconnected(Yu,lambda1=lam1.unconnected,lambda2=lam2.unconnected,penalty=penalty,rho=rho,weights=weights,maxiter=maxiter,tol=tol)$Z
+      theta.unconnected = admm.iters.unconnected.S(Su,lambda0=lam1.unconnected,rho=rho,weights=weights,maxiter=maxiter,tol=tol)
       for(k in 1:K) { names(theta.unconnected[[k]])=dimnames(Y[[k]])[[2]][!connected] }
     }
     if(sum(unconnected)==0) {theta.unconnected = NULL}
@@ -174,11 +171,11 @@ JGL.adaptive <-
       for(i in 1:length(blocklist)){
         # the variables in the block
         bl <- blocklist[[i]]
-        Ybl = list()
-        # get the data on only those variables
+        Sbl = list()
+        # get the covariance on only those variables
         for(k in 1:K)
         {
-          Ybl[[k]] = Y[[k]][,bl]
+          Sbl[[k]] = S[[k]][bl,bl,drop=FALSE]
         }
         # penalty matrices:
         if(length(lambda1)==1) { lam1.bl = lambda1 }
@@ -186,11 +183,10 @@ JGL.adaptive <-
         if(length(lambda2)==1) { lam2.bl = lambda2 }
         if(length(lambda2)>1) { lam2.bl = lambda2[bl,bl] }
         # initialize lambdas:
-        lam1.bl = JGL:::penalty.as.matrix(lam1.bl,dim(Ybl[[1]])[2],penalize.diagonal=TRUE)
+        lam1.bl = JGL:::penalty.as.matrix(lam1.bl,length(bl),penalize.diagonal=TRUE)
         diag(lam1.bl) <- lambda0
 
-        if(penalty=="fused") {lam2.bl = JGL:::penalty.as.matrix(lam2.bl,dim(Ybl[[1]])[2],penalize.diagonal=FALSE)}
-        if(penalty=="group") {lam2.bl = JGL:::penalty.as.matrix(lam2.bl,dim(Ybl[[1]])[2],penalize.diagonal=FALSE)}
+        lam2.bl = JGL:::penalty.as.matrix(lam2.bl,length(bl),penalize.diagonal=FALSE)
 
         # implement warm start if desired
         if(length(warm)==0) {warm.bl = NULL}
@@ -200,7 +196,7 @@ JGL.adaptive <-
           for(k in 1:K) { warm.bl[[k]] = warm[[k]][bl,bl] }
         }
         # run JGL on the block:
-        Thetabl = admm.iters.adaptive(Ybl,lam1.bl,lam2.bl,penalty=penalty,rho=rho,weights=weights,maxiter=maxiter,tol=tol,warm=warm.bl)
+        Thetabl = admm.iters.adaptive(Sbl,lam1.bl,lam2.bl,penalty=penalty,rho=rho,weights=weights,maxiter=maxiter,tol=tol,warm=warm.bl)
         # update Theta with Thetabl's results:
         for(k in 1:K) {theta[[k]][connected.index[bl],connected.index[bl]] = Thetabl$Z[[k]]}
       }}
@@ -403,7 +399,6 @@ SSJGL_select_v0_cv <- function(
           rho = rho, a = a, b = b,
           maxitr.em = maxitr.em, tol.em = tol.em,
           maxitr.jgl = maxitr.jgl, tol.jgl = tol.jgl,
-          warm = NULL, warm.connected = NULL,
           truncate = truncate,
           normalize = normalize,
           c = c,
@@ -523,7 +518,6 @@ SSJGL_final_with_pcor_CI <- function(
     rho = rho, a = a, b = b,
     maxitr.em = maxitr.em, tol.em = tol.em,
     maxitr.jgl = maxitr.jgl, tol.jgl = tol.jgl,
-    warm = NULL, warm.connected = NULL,
     truncate = truncate,
     normalize = normalize,
     c = c,
@@ -561,7 +555,6 @@ SSJGL_final_with_pcor_CI <- function(
         rho = rho, a = a, b = b,
         maxitr.em = maxitr.em, tol.em = tol.em,
         maxitr.jgl = maxitr.jgl, tol.jgl = tol.jgl,
-        warm = NULL, warm.connected = NULL,
         truncate = truncate,
         normalize = normalize,
         c = c,

@@ -58,17 +58,21 @@
 #' @param tol.em Numeric EM convergence tolerance. Default 1e-4.
 #' @param maxitr.jgl Integer max ADMM iterations for M-step. Default 500.
 #' @param tol.jgl Numeric ADMM convergence tolerance. Default 1e-5.
-#' @param warm List of K warm-start precision matrices. Default \code{NULL}.
-#' @param warm.connected Logical vector for warm-starting block structure.
-#'   Default \code{NULL}.
 #' @param truncate Numeric threshold below which entries are zeroed. Default
 #'   1e-5.
 #' @param normalize Logical. If \code{TRUE}, mean-centers each variable.
-#'   Default \code{FALSE}.
+#'   Default \code{FALSE}. Centring does not change the estimates, because
+#'   the sample covariance is centred anyway. When missing values are imputed
+#'   the data are always centred internally (the conditional-mean imputation
+#'   assumes mean zero) and the imputed values are returned on the original
+#'   scale.
 #' @param c Numeric diagonal regularization for initial precision estimate.
 #'   Default 0.1.
 #' @param impute Logical. If \code{TRUE}, imputes \code{NA}s via conditional
-#'   MVN at each EM iteration. Default \code{TRUE}.
+#'   MVN at each EM iteration. The M-step then uses the expected sample
+#'   covariance given the observed data, i.e. the covariance of the imputed
+#'   data plus the conditional covariance of the missing cells (Li et al.,
+#'   2019, supplement B). Default \code{TRUE}.
 #'
 #' @return An object of class \code{"ssjgl"}, a list with elements:
 #'   \describe{
@@ -89,7 +93,8 @@
 #'     \item{penlist2}{List of p x p adaptive penalty weights for lambda2.
 #'       NULL if \code{doubly = FALSE}.}
 #'     \item{timelist}{Numeric vector of wall-clock seconds per v0 step.}
-#'     \item{imputed}{Numeric vector of imputed values, or NULL.}
+#'     \item{imputed}{Numeric vector of imputed values on the original data
+#'       scale (one per row of \code{missed}), or NULL.}
 #'     \item{missed}{Matrix of (group, row, col) for missing values, or NULL.}
 #'   }
 #'
@@ -117,7 +122,6 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
                   rho=1, a=1, b =1,
                   maxitr.em=500, tol.em=1e-4,
                   maxitr.jgl=500,tol.jgl=1e-5,
-                  warm=NULL, warm.connected=NULL,
                   truncate=1e-5,
                   normalize=FALSE,
                   c=0.1,
@@ -147,26 +151,19 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
   if (!impute && any(vapply(Y, function(m) anyNA(m), logical(1))))
     warning("Y contains NA values but impute = FALSE. NAs will propagate.")
 
-  # decreasing v0, i.e., increasing penalty, warm start the 0 elements
-  if(length(v0s) > 1){
-    if(v0s[1] > v0s[2]){
-      use.warm.connected <- TRUE
-    }else{
-      use.warm.connected <- FALSE
-    }
-  }else{
-    use.warm.connected <- FALSE
-  }
-
   # get dimensions
   p <- dim(Y[[1]])[2]
   K <- length(Y)
   n <- rep(0, K)
   for(k in 1:K) n[k] = dim(Y[[k]])[1]
 
-  # normalize Y?
-  meanj <- matrix(NA, K, p)
-  if(normalize){
+  # normalize Y? The conditional-mean imputation in getmissing() assumes
+  # mean-zero data, so also centre whenever there are cells to impute.
+  # Centring does not change S (cov() centres), so fits without missing
+  # data are unaffected.
+  has_missing <- impute && any(vapply(Y, anyNA, logical(1)))
+  meanj <- matrix(0, K, p)
+  if(normalize || has_missing){
     for(k in 1:K){
       for(j in 1:p){
         meanj[k, j] <- mean(Y[[k]][,j], na.rm = TRUE)
@@ -192,7 +189,6 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
     imputed <- NULL
   }
 
-  warm.connected <- NULL
   trace_theta <- trace_d <- NULL
   trace_prob_si <- trace_d_si <- NULL
   trace_pi1 <- trace_pi2 <- NULL
@@ -305,7 +301,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
         # Pi update
         n_edges <- p * (p - 1) / 2
         pi_delta <- (a + sum(prob1) / 2 - 1) / (a + b + n_edges - 2)
-        pi_xi <- (a + sum(prob2) / 2 - 1) / (a + b + n_edges - 2)
+        if(doubly) pi_xi <- (a + sum(prob2) / 2 - 1) / (a + b + n_edges - 2)
 
         # M-step
         lambda1_current <- lambda1 * d1
@@ -315,7 +311,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
           lambda2_current <- lambda2 * d1
           d2 <- prob2 <- NULL
         }
-        mstep <- JGL.adaptive(YY, addvar = addvar, penalty=penalty,lambda0=lambda0, lambda1=lambda1_current,lambda2=lambda2_current,rho=rho, maxiter=maxitr.jgl,tol=tol.jgl,warm=NULL, warm.connected=NULL, return.whole.theta=TRUE, truncate=truncate, normalize=FALSE)
+        mstep <- JGL.adaptive(YY, addvar = addvar, penalty=penalty,lambda0=lambda0, lambda1=lambda1_current,lambda2=lambda2_current,rho=rho, maxiter=maxitr.jgl,tol=tol.jgl,warm=NULL, return.whole.theta=TRUE, truncate=truncate, normalize=FALSE)
         theta <- mstep$theta
 
         # compare difference
@@ -343,7 +339,6 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
     trace_pi2[[i]] <- pi_xi
     trace_itr[i] <- itr
     trace_diff <- diff
-    if(use.warm.connected) warm.connected <- mstep$connected
     time[i] <- as.numeric(Sys.time() - start_time, units="secs")
     cat(paste0("Ladder= ", i, " v0 = ", round(v0,5), " done. Time: ", round(time[i]), "\n"))
   }
