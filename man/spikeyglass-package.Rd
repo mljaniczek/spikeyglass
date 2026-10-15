@@ -23,5 +23,10 @@ Authors:
   \item Zehang Richard Li \email{lizehang@gmail.com}
 }
 
+Other contributors:
+\itemize{
+  \item Patrick Danaher (Author of JGL; vendored and ported routines, see inst/COPYRIGHTS) [copyright holder]
+}
+
 }
 \keyword{internal}

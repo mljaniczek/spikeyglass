@@ -140,19 +140,6 @@ test_that("JGL.adaptive() uses addvar in the M-step, not only in screening", {
   }
 })
 
-test_that("unconnected-node solver matches JGL:::admm.iters.unconnected", {
-  set.seed(5)
-  Y <- list(matrix(rnorm(60), 20, 3), matrix(rnorm(45), 15, 3))
-  n <- c(20, 15)
-  S <- lapply(1:2, function(k) apply(Y[[k]], 2, var) * (n[k] - 1) / n[k])
-  for (pen in c("fused", "group")) {
-    ref <- JGL:::admm.iters.unconnected(Y, lambda1 = 0.7, lambda2 = 0,
-                                        penalty = pen, rho = 1, weights = n)$Z
-    ours <- admm.iters.unconnected.S(S, lambda0 = 0.7, rho = 1, weights = n)
-    expect_equal(ours, ref, tolerance = 1e-12)
-  }
-})
-
 # --- 5. warm / warm.connected removed ----------------------------------------
 
 test_that("ssjgl() no longer accepts the unused warm arguments", {

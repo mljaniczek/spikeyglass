@@ -16,7 +16,7 @@
 
 2. **E-step** (`gete()` / `gete.doubly()`): Compute posterior probabilities of edge inclusion P(delta=1) and (if doubly) similarity P(xi=1). Produces adaptive penalty weights `d = (1-prob)/v0 + prob/v1` for the M-step. Uses log-sum-exp trick for numerical stability.
 
-3. **M-step** (`JGL.adaptive()` + `admm.iters.adaptive()`): ADMM-based Joint Graphical Lasso with matrix-valued lambda1/lambda2 penalties (edge-specific weights from E-step). Theta update via eigendecomposition, Z update via JGL's `flsa2`/`dsgl`.
+3. **M-step** (`JGL.adaptive()` + `admm.iters.adaptive()`): ADMM-based Joint Graphical Lasso with matrix-valued lambda1/lambda2 penalties (edge-specific weights from E-step). Theta update via eigendecomposition, Z update via C++ ports of JGL's `flsa2`/`flsa.general`/`dsgl`.
 
 4. **Pi update**: Beta posterior mode: `pi_delta = (a + sum_edges(prob1) - 1) / (a + b + n_edges - 2)`.
 
@@ -35,6 +35,7 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 - `R/ssjgl.R` — Main `ssjgl()` function: EM algorithm with v0 ladder
 - `R/utils-gete.R` — `gete()`, `gete.doubly()`: E-step computation; `getmissing()`: MVN imputation
 - `R/utils-admm.R` — `admm.iters.adaptive()`: ADMM iterations with matrix-valued penalties
+- `R/jgl-vendored.R` — `penalty.as.matrix()`, `admm.iters.unconnected.S()` (from JGL 2.3.2, MIT)
 - `R/utils-ssjgl.R` — `JGL.adaptive()`: Adapted JGL with block screening; `negloglik_Gaussian()`, `precision_to_pcor()`, `SSJGL_select_v0_cv()`, `SSJGL_final_with_pcor_CI()`, `SSJGL_CV_final_pcorCI()`
 
 ### S3 methods and helpers
@@ -70,8 +71,7 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 
 ## Dependencies
 
-- `JGL` — Core ADMM routines (flsa2, dsgl, flsa.general, penalty.as.matrix)
-- `igraph` — Block structure detection in screening step
+- `Rcpp`, `RcppArmadillo` — C++ EM loop and ADMM (JGL routines vendored/ported; JGL and igraph are no longer dependencies)
 - `MASS` — `mvrnorm()` for data simulation
 - `graphics`, `stats` — Base R plotting and statistics
 
@@ -100,7 +100,7 @@ R CMD INSTALL .
 
 2. **Convergence criterion (fixed)**: Original used `max(diff, (theta_last[[k]] - theta[[k]])^2)` which computes element-wise squared differences. Fixed to `max(abs(...))` for consistent tolerance semantics.
 
-3. **JGL internal access**: Package uses `JGL:::` to access unexported functions (flsa2, dsgl, flsa.general, penalty.as.matrix). These may break if JGL changes internals. Locations: `R/utils-ssjgl.R` (`penalty.as.matrix`) and `R/utils-admm.R` (R fallback ADMM for fused K>2). `admm.iters.unconnected` is vendored as `admm.iters.unconnected.S()` in `R/utils-admm.R`. The C++ ADMM path reimplements flsa2 and dsgl.
+3. **JGL vendored (2026-10)**: JGL was archived from CRAN, so it is no longer a dependency. `R/jgl-vendored.R` holds `penalty.as.matrix()` and `admm.iters.unconnected.S()`; `src/admm_adaptive.cpp` ports flsa2, dsgl and flsa.general (`flsa_general_update()`). Attribution is in `inst/COPYRIGHTS`. igraph has also been dropped: `connected_components_cpp()` does block detection. `tests/testthat/fixtures/` holds the pre-vendoring reference fits and the JGL flsa.general outputs.
 
 4. **Imputation meanj indexing (fixed)**: `ssjgl.R` line 356 used `meanj[missed[, 3]]` which indexes a (K x p) matrix with a single vector (treated as linear indexing). Fixed to `meanj[cbind(missed[, 1], missed[, 3])]` for correct group-specific mean restoration.
 
@@ -108,7 +108,7 @@ R CMD INSTALL .
 
 ## TODO (low priority)
 
-- **JGL ::: fragility**: Long-term, consider vendoring the 4-5 JGL internal functions (flsa2, dsgl, flsa.general, penalty.as.matrix) directly into spikeyglass to remove the fragile `:::` dependency. The C++ ADMM path already reimplements the core routines for K<=2.
+- None currently.
 
 ## Cross-project Notes (multiGGMr)
 

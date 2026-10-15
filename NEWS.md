@@ -1,5 +1,24 @@
 # spikeyglass (development version)
 
+## Dependencies
+
+* spikeyglass no longer depends on JGL, which was archived from CRAN on
+  2025-07-17. The few JGL 2.3.2 routines it used (MIT licence, Patrick
+  Danaher) are vendored in `R/jgl-vendored.R` or ported to C++
+  (`flsa.general` is now `flsa_general_update()`). Patrick Danaher is listed
+  as a copyright holder; see `inst/COPYRIGHTS`. The `Remotes:` field is
+  removed.
+
+* igraph is no longer a dependency. Block detection in the R EM path uses
+  the same C++ breadth-first search as the C++ path.
+
+## Performance
+
+* The fused penalty with K > 2 now runs entirely in C++ (EM loop and ADMM)
+  instead of in R with `JGL:::flsa.general`. It is about 4 times faster
+  (35 s to 9 s for p = 20, K = 3, doubly). Results match the previous
+  version to 1e-10.
+
 ## Bug fixes
 
 * `lambda2 = 0` (separate estimation) no longer sets every posterior inclusion
@@ -43,6 +62,11 @@
   They were accepted but never used.
 
 ## Testing
+
+* Reference fits saved before JGL was vendored (fused/group, single/doubly,
+  K = 2 and 3, and two imputation cases) are reproduced to 1e-10
+  (`tests/testthat/test-reference-fits.R`). The C++ `flsa.general` port is
+  checked against saved JGL outputs.
 
 * New regression tests for each fix above, plus a test that the C++ and R EM
   paths agree to 1e-10 for fused/group penalties with and without the doubly

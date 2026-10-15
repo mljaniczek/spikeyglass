@@ -1,6 +1,6 @@
 #' Adaptive Joint Graphical Lasso (internal)
 #'
-#' Adapted from JGL package (v2.3) to accept matrix-valued lambda1/lambda2
+#' Adapted from JGL package (v2.3.2, (c) Patrick Danaher, MIT) to accept matrix-valued lambda1/lambda2
 #' penalties for adaptive edge-specific penalization from the SSJGL E-step.
 #'
 #' With missing data, \code{addvar} holds the summed conditional covariances
@@ -96,21 +96,19 @@ JGL.adaptive <-
       diag(critboth) = 1
     }
 
-    ## now identify block structure using igraph:
-    # Replace any NAs/NaNs with FALSE to prevent igraph errors
+    ## now identify block structure (connected components):
+    # Replace any NAs/NaNs with FALSE
+    critboth <- critboth != 0
     critboth[is.na(critboth)] <- FALSE
-    g1 <- igraph::graph_from_adjacency_matrix(critboth)
-    cout = igraph::components(g1)
+    membership <- connected_components_cpp(critboth)
     blocklist = list()
     # identify unconnected elements, and get blocks:
     unconnected = c()
 
-    # adapt cout$membership to start with index 1:
-    if(min(cout$membership)==0){cout$membership=cout$membership+1}
-    for(i in 1:(cout$no))
+    for(i in seq_len(max(membership)))
     {
-      if(sum(cout$membership==i)==1) { unconnected <- c(unconnected,which(cout$membership==i)) }
-      if(sum(cout$membership==i)>1) { blocklist[[length(blocklist)+1]] <- which(cout$membership==i) }
+      if(sum(membership==i)==1) { unconnected <- c(unconnected,which(membership==i)) }
+      if(sum(membership==i)>1) { blocklist[[length(blocklist)+1]] <- which(membership==i) }
     }
 
     # final set of connected nodes
@@ -183,10 +181,10 @@ JGL.adaptive <-
         if(length(lambda2)==1) { lam2.bl = lambda2 }
         if(length(lambda2)>1) { lam2.bl = lambda2[bl,bl] }
         # initialize lambdas:
-        lam1.bl = JGL:::penalty.as.matrix(lam1.bl,length(bl),penalize.diagonal=TRUE)
+        lam1.bl = penalty.as.matrix(lam1.bl,length(bl),penalize.diagonal=TRUE)
         diag(lam1.bl) <- lambda0
 
-        lam2.bl = JGL:::penalty.as.matrix(lam2.bl,length(bl),penalize.diagonal=FALSE)
+        lam2.bl = penalty.as.matrix(lam2.bl,length(bl),penalize.diagonal=FALSE)
 
         # implement warm start if desired
         if(length(warm)==0) {warm.bl = NULL}

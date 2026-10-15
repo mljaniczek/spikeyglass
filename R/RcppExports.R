@@ -20,6 +20,31 @@ admm_iters_adaptive_cpp <- function(S_list, lam1, lam2, penalty, rho, rho_increm
     .Call(`_spikeyglass_admm_iters_adaptive_cpp`, S_list, lam1, lam2, penalty, rho, rho_increment, weights, maxiter, tol, warm_list)
 }
 
+#' Fused-lasso Z-update for general K (internal; exposed for testing)
+#'
+#' @param A_list List of K p x p matrices
+#' @param rho ADMM step size
+#' @param lam1 Matrix-valued lambda1 penalty (p x p)
+#' @param lam2 Matrix-valued lambda2 penalty (p x p)
+#' @return List of K matrices
+#' @keywords internal
+flsa_general_cpp <- function(A_list, rho, lam1, lam2) {
+    .Call(`_spikeyglass_flsa_general_cpp`, A_list, rho, lam1, lam2)
+}
+
+#' Connected components of an undirected graph (internal)
+#'
+#' Breadth-first search on the symmetrised adjacency matrix; replaces
+#' igraph::components() (weak connectivity) in the R EM path.
+#'
+#' @param adj Logical p x p adjacency matrix
+#' @return Integer vector of 1-based component labels, numbered in order of
+#'   each component's lowest-index node
+#' @keywords internal
+connected_components_cpp <- function(adj) {
+    .Call(`_spikeyglass_connected_components_cpp`, adj)
+}
+
 #' Full EM inner loop in C++ (E-step + block detection + ADMM)
 #'
 #' Runs the EM algorithm for a single v0 step entirely in C++, avoiding

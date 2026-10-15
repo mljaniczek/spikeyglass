@@ -9,7 +9,11 @@ Authors@R:
       person(given = "Margaret",
            family = "Janiczek",
            role = c("aut", "cre"),
-           email = "mjaniczek@umass.edu")
+           email = "mjaniczek@umass.edu"),
+      person(given = "Patrick",
+           family = "Danaher",
+           role = c("cph"),
+           comment = "Author of JGL; vendored and ported routines, see inst/COPYRIGHTS")
            )
 Description: Package implementing the method Bayesian joint spike-and-slab graphical lasso to infer multiple Gaussian graphical models in R. Bayesian treatments of group graphical lasso and fused graphical lasso.
 License: MIT + file LICENSE
@@ -28,13 +32,9 @@ LazyData: true
 URL: https://mljaniczek.github.io/spikeyglass/
 Imports:
     graphics,
-    igraph,
-    JGL,
     MASS,
     Rcpp,
     stats
 LinkingTo:
     Rcpp,
     RcppArmadillo
-Remotes:
-    JGL=patrickjdanaher/JGL-package

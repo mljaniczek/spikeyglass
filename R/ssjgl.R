@@ -211,8 +211,8 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
   }
 
   # Determine if we can use the C++ EM inner loop
-  # C++ path handles: non-imputation case with K<=2 fused or any group penalty
-  use_cpp_em <- !impute && !(penalty == "fused" && K > 2)
+  # C++ path handles every penalty and K; the R loop is needed only to impute
+  use_cpp_em <- !impute
 
   time <- rep(0, length(v0s))
   for(i in 1:length(v0s)){

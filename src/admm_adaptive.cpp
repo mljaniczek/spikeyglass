@@ -40,6 +40,89 @@ static void flsa2_update(const mat& A1, const mat& A2,
   Z2 = soft_thresh(Y_pre, lam1_r, true);
 }
 
+// FLSA for general K fused penalty (Z-update step). Element-wise port of
+// JGL:::flsa.general (JGL 2.3.2, (c) Patrick Danaher, MIT licence), with the
+// same 1e-4 tie tolerance and the same order of operations so that results
+// match the R version to rounding error.
+static void flsa_general_update(const std::vector<mat>& A, int K,
+                                double rho, const mat& lam1, const mat& lam2,
+                                std::vector<mat>& Z) {
+  const double eps = 1e-4;
+  for (int k = 0; k < K; k++) Z[k].set_size(size(A[0]));
+
+  std::vector<double> trueA(K), a(K), beta(K), newc(K);
+  std::vector<int> ord(K), nord(K);
+  std::vector<std::vector<int>> fus(K, std::vector<int>(K));
+
+  for (uword e = 0; e < A[0].n_elem; e++) {
+    double l2r = lam2(e) / rho;
+    for (int k = 0; k < K; k++) trueA[k] = a[k] = A[k](e);
+    for (int k = 0; k < K; k++) {
+      newc[k] = 0.0;
+      for (int o = 0; o < K; o++) {
+        if (o == k) continue;
+        newc[k] += (double)(a[o] - a[k] < -eps) - (double)(a[o] - a[k] > eps);
+      }
+      for (int kp = 0; kp < K; kp++) fus[k][kp] = 0;
+    }
+
+    for (int iter = 1; iter <= K - 1; iter++) {
+      for (int k = 0; k < K; k++) {
+        ord[k] = 1;
+        for (int o = 0; o < K; o++) if (o != k && a[k] - a[o] > eps) ord[k]++;
+        for (int o = 0; o < k; o++) if (std::abs(a[o] - a[k]) < eps) ord[k]++;
+      }
+      for (int k = 0; k < K; k++) beta[k] = a[k] - l2r * newc[k];
+      for (int k = 0; k < K; k++) {
+        nord[k] = 1;
+        for (int o = 0; o < K; o++) if (o != k && beta[k] - beta[o] > eps) nord[k]++;
+        for (int o = 0; o < k; o++) if (std::abs(beta[o] - beta[k]) < eps) nord[k]++;
+      }
+      for (int k = 0; k < K; k++) {
+        for (int kp = 0; kp < K; kp++) {
+          bool f = (ord[k] - 1 == ord[kp] && nord[k] < nord[kp]) ||
+                   (ord[k] + 1 == ord[kp] && nord[k] > nord[kp]) ||
+                   (std::abs(a[k] - a[kp]) < eps);
+          if (f) fus[k][kp] = 1;
+        }
+      }
+      // transitive closure, in the same (sequential) order as JGL
+      for (int k = 0; k < K; k++) {
+        for (int kp = 0; kp < K; kp++) {
+          for (int o = 0; o < K; o++) {
+            if (o == k || o == kp) continue;
+            if (fus[k][o] && fus[kp][o]) fus[k][kp] = 1;
+          }
+        }
+      }
+      // fused groups take the mean of their (original) values
+      for (int k = 0; k < K; k++) {
+        double fusemean = trueA[k], denom = 1.0;
+        for (int o = 0; o < K; o++) {
+          if (o == k) continue;
+          fusemean += fus[k][o] * trueA[o];
+          denom += fus[k][o];
+        }
+        a[k] = fusemean / denom;
+      }
+      for (int k = 0; k < K; k++) {
+        newc[k] = 0.0;
+        for (int o = 0; o < K; o++) {
+          if (o == k) continue;
+          newc[k] += (double)(a[o] - a[k] < -eps) - (double)(a[o] - a[k] > eps);
+        }
+      }
+    }
+
+    double l1r = lam1(e) / rho;
+    for (int k = 0; k < K; k++) {
+      double b = a[k] - l2r * newc[k];
+      double sgn = (b > 0) - (b < 0);
+      Z[k](e) = sgn * std::max(std::abs(b) - l1r, 0.0);
+    }
+  }
+}
+
 // Group penalty Z-update (dsgl) for general K
 static void dsgl_update(const std::vector<mat>& A, int K,
                         double rho, const mat& lam1, const mat& lam2,
@@ -136,7 +219,7 @@ static List admm_with_S(const std::vector<mat>& S, const vec& n,
       if (K == 2) {
         flsa2_update(A[0], A[1], current_rho, lam1, lam2, Z[0], Z[1]);
       } else {
-        dsgl_update(A, K, current_rho, lam1, lam2, Z);
+        flsa_general_update(A, K, current_rho, lam1, lam2, Z);
       }
     } else {
       dsgl_update(A, K, current_rho, lam1, lam2, Z);
@@ -395,6 +478,53 @@ static void find_components(const umat& adj, int p,
     }
     n_components++;
   }
+}
+
+
+//' Fused-lasso Z-update for general K (internal; exposed for testing)
+//'
+//' @param A_list List of K p x p matrices
+//' @param rho ADMM step size
+//' @param lam1 Matrix-valued lambda1 penalty (p x p)
+//' @param lam2 Matrix-valued lambda2 penalty (p x p)
+//' @return List of K matrices
+//' @keywords internal
+// [[Rcpp::export]]
+List flsa_general_cpp(List A_list, double rho, arma::mat lam1, arma::mat lam2) {
+  int K = A_list.size();
+  std::vector<mat> A(K), Z(K);
+  for (int k = 0; k < K; k++) A[k] = as<mat>(A_list[k]);
+  flsa_general_update(A, K, rho, lam1, lam2, Z);
+  List out(K);
+  for (int k = 0; k < K; k++) out[k] = wrap(Z[k]);
+  return out;
+}
+
+
+//' Connected components of an undirected graph (internal)
+//'
+//' Breadth-first search on the symmetrised adjacency matrix; replaces
+//' igraph::components() (weak connectivity) in the R EM path.
+//'
+//' @param adj Logical p x p adjacency matrix
+//' @return Integer vector of 1-based component labels, numbered in order of
+//'   each component's lowest-index node
+//' @keywords internal
+// [[Rcpp::export]]
+IntegerVector connected_components_cpp(LogicalMatrix adj) {
+  int p = adj.nrow();
+  umat a(p, p, fill::zeros);
+  for (int i = 0; i < p; i++) {
+    for (int j = 0; j < p; j++) {
+      if (adj(i, j) == TRUE || adj(j, i) == TRUE) a(i, j) = 1;
+    }
+  }
+  ivec labels;
+  int n_comp;
+  find_components(a, p, labels, n_comp);
+  IntegerVector out(p);
+  for (int i = 0; i < p; i++) out[i] = labels(i) + 1;
+  return out;
 }
 
 
