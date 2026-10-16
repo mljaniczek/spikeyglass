@@ -254,40 +254,6 @@ negloglik_Gaussian <- function(S, Theta) {
   -as.numeric(detinfo$modulus) + sum(diag(S %*% Theta))
 }
 
-#' Convert precision matrix to partial correlations
-#'
-#' Computes partial correlations from a precision matrix using the formula
-#' \code{pcor[i,j] = -Theta[i,j] / sqrt(Theta[i,i] * Theta[j,j])}.
-#' Diagonal entries are set to 1.
-#'
-#' @param Theta Precision matrix (p x p). Must be positive definite.
-#'
-#' @return A p x p partial correlation matrix with 1s on the diagonal.
-#'   Returns a matrix of \code{NA}s if the diagonal contains non-positive
-#'   or non-finite values.
-#' @export
-#'
-#' @examples
-#' Theta <- matrix(c(2, -0.5, -0.5, 2), 2, 2)
-#' precision_to_pcor(Theta)  # partial correlation = 0.25
-precision_to_pcor <- function(Theta) {
-  Theta <- as.matrix(Theta)
-  d <- diag(Theta)
-  # avoid division by 0 / negative diag issues
-  if (any(!is.finite(d)) || any(d <= 0)) {
-    p <- nrow(Theta)
-    out <- matrix(NA_real_, p, p)
-    return(out)
-  }
-  denom <- sqrt(outer(d, d))
-  P <- -Theta / denom
-  diag(P) <- 1
-  # symmetry cleanup
-  P <- (P + t(P)) / 2
-  P
-}
-
-
 #' Select v0 via K-fold cross-validation
 #'
 #' Evaluates each v0 value in the ladder using K-fold cross-validation

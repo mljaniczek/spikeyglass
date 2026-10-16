@@ -33,6 +33,7 @@ Depends:
 LazyData: true
 URL: https://mljaniczek.github.io/spikeyglass/
 Imports:
+    ggmtools,
     graphics,
     MASS,
     Rcpp,
@@ -40,3 +41,5 @@ Imports:
 LinkingTo:
     Rcpp,
     RcppArmadillo
+Remotes:
+    mljaniczek/ggmtools

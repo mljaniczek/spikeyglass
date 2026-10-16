@@ -1,5 +1,21 @@
 # spikeyglass (development version)
 
+## Shared tools with multiGGMr: ggmtools
+
+* `precision_to_pcor()`, `confusion_at_threshold()`, `roc_auc()` and
+  `plot_roc()` now come from the new package ggmtools (Imports) and are
+  re-exported. multiGGMr re-exports the same functions, so attaching both
+  packages no longer gives conflicting versions with different signatures.
+* `roc_auc()` now returns `auc` (lower case; was `AUC`). `compute_metrics()`
+  is updated; `plot_roc()` accepts either.
+* `confusion_at_threshold()` returns `NA` (was 0) for rates with a zero
+  denominator.
+* New methods for the ggmtools generics `pip_table()` (PIPs as a long edge
+  table; the shared P(delta = 1) is repeated for each group) and
+  `pcor_estimate()` (MAP partial correlations, one matrix per group).
+  Scripts written with these work on multiGGMr fits too.
+* The TCGA BRCA PI3K dataset is available as `ggmtools::brca_pi3k`.
+
 ## New features
 
 * New `diff_edges()` tests which edges differ between two groups.

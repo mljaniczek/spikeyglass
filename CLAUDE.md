@@ -46,7 +46,9 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 - `R/diff_edges.R` — `diff_edges()`: permutation (pooled null, BH) or bootstrap inference on group differences; refits via `fit$args`, optionally parallel through future.apply; `print`/`plot` methods. Edge-table columns follow multiGGMr where concepts match (`i`, `j`, `lower`, `upper`).
 
 ### Evaluation and visualization
-- `R/utils-eval.R` — `confusion_at_threshold()`, `roc_auc()`, `compute_metrics()`, `plot_roc()`
+- `R/utils-eval.R` — `compute_metrics()`
+- `R/reexports.R` — re-exports from ggmtools: `precision_to_pcor()`, `confusion_at_threshold()`, `roc_auc()`, `plot_roc()`, `pip_table()`, `pcor_estimate()`, `edge_index()`
+- `R/methods.R` also has `pip_table.ssjgl()` / `pcor_estimate.ssjgl()` (ggmtools generics)
 - `R/plot_path.R` — `plot_path()`: Solution path visualization
 - `R/getmetric.R` — `getmetric()`: Legacy single-group metrics
 - `R/getdiffmetric.R` — `getdiffmetric()`: Differential edge metrics
@@ -114,12 +116,14 @@ R CMD INSTALL .
 
 - None currently.
 
-## Cross-project Notes (multiGGMr)
+## Cross-project Notes (multiGGMr, ggmtools)
 
-Shared utility functions adapted between packages (keeping consistent signatures):
-- `precision_to_pcor()` — Precision to partial correlation conversion
-- `confusion_at_threshold()` / `roc_auc()` — Evaluation metrics
-- `simulate_ssjgl_data()` — Data simulation (adapted from multiGGMr's `simulate_multiggm()`)
+Functions shared with multiGGMr (github.com/mljaniczek/multiGGMr) live in **ggmtools** (github.com/mljaniczek/ggmtools; local checkout `../ggmtools`), and both packages re-export them:
+- `precision_to_pcor()`, `confusion_at_threshold()`, `roc_auc()` (tie-correct; returns `auc`), `plot_roc()`
+- generics `pip_table()` (long edge table: i, j, node1, node2, group, pip) and `pcor_estimate()` (list of K pcor matrices); each package registers methods
+- `edge_index()` / `as_pip_table()` for the shared edge-table format; dataset `brca_pi3k`
+
+Change shared behaviour in ggmtools, not here. Until ggmtools is on CRAN, DESCRIPTION has `Remotes: mljaniczek/ggmtools`.
 
 Both packages are for multiple GGM estimation but use different methods:
 - `spikeyglass`: EM + spike-and-slab + JGL (Li et al. 2019)
