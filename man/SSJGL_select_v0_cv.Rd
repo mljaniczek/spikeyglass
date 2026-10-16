@@ -26,7 +26,7 @@ SSJGL_select_v0_cv(
   normalize = FALSE,
   c = 0.1,
   impute = TRUE,
-  verbose = TRUE
+  verbose = FALSE
 )
 }
 \arguments{
@@ -36,11 +36,17 @@ SSJGL_select_v0_cv(
 
 \item{folds}{Integer number of CV folds. Default 5.}
 
-\item{seed}{Integer random seed. Default 1.}
+\item{seed}{Integer random seed for the fold/resample assignment. Default
+\enumerate{
+\item It is used locally (the previous state is restored on exit), so the caller's
+random-number stream is left unchanged; \code{NULL} uses the current
+stream.
+}}
 
 \item{penalty, lambda0, lambda1, lambda2, v1, doubly, rho, a, b, maxitr.em, tol.em, maxitr.jgl, tol.jgl, truncate, normalize, c, impute}{Arguments passed to \code{\link{ssjgl}}.}
 
-\item{verbose}{Logical. If TRUE, prints fold progress. Default TRUE.}
+\item{verbose}{Logical. If TRUE, reports fold progress with
+\code{message()}. Default FALSE.}
 }
 \value{
 A list with elements:

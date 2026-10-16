@@ -79,6 +79,9 @@
 #'   covariance given the observed data, i.e. the covariance of the imputed
 #'   data plus the conditional covariance of the missing cells (Li et al.,
 #'   2019, supplement B). Default \code{TRUE}.
+#' @param verbose Logical. If \code{TRUE}, report progress (each EM
+#'   iteration on the R path, and each ladder step) with \code{message()}.
+#'   Default \code{FALSE}.
 #' @param standardize Logical. If \code{TRUE}, centres \emph{and} scales each
 #'   variable to unit variance within each group before fitting, so the
 #'   precision matrices are estimated on the correlation scale and
@@ -156,7 +159,8 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
                   normalize=FALSE,
                   c=0.1,
                   impute=TRUE,
-                  standardize=FALSE){
+                  standardize=FALSE,
+                  verbose=FALSE){
   cl <- match.call()
 
   # --- Input validation ---
@@ -187,7 +191,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
                rho = rho, a = a, b = b, maxitr.em = maxitr.em, tol.em = tol.em,
                maxitr.jgl = maxitr.jgl, tol.jgl = tol.jgl, truncate = truncate,
                normalize = normalize, c = c, impute = impute,
-               standardize = standardize)
+               standardize = standardize, verbose = verbose)
   if (v1 <= 0)
     stop("v1 must be positive")
   if (a <= 0 || b <= 0)
@@ -302,7 +306,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
       }
     }
     theta_last <- NULL
-    if(length(klist) > 0) message(paste("Re-initiated to full precision matrices for group", paste(klist, collapse=",")))
+    if(verbose && length(klist) > 0) message(paste("Re-initiated to full precision matrices for group", paste(klist, collapse=",")))
 
     if (use_cpp_em) {
       # === C++ EM inner loop ===
@@ -377,10 +381,12 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
         if(!is.null(pi_delta_last)){
           diff <- 0
           for(k in 1:length(theta_last)) diff <- max(diff, max(abs(theta_last[[k]] - theta[[k]])))
-          if(doubly){
-            cat(paste0("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab1: ", round(pi_delta, 4), "  p.slab2: ", round(pi_xi, 10), "\n"))
-          }else{
-            cat(paste0("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab: ", round(pi_delta, 4), "\n"))
+          if(verbose){
+            if(doubly){
+              message("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab1: ", round(pi_delta, 4), "  p.slab2: ", round(pi_xi, 10))
+            }else{
+              message("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab: ", round(pi_delta, 4))
+            }
           }
         }
         pi_delta_last <- pi_delta
@@ -399,7 +405,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
     trace_itr[i] <- itr
     trace_diff <- diff
     time[i] <- as.numeric(Sys.time() - start_time, units="secs")
-    cat(paste0("Ladder= ", i, " v0 = ", round(v0,5), " done. Time: ", round(time[i]), "\n"))
+    if(verbose) message("Ladder step ", i, ": v0 = ", signif(v0, 5), " done (", itr, " EM iterations, ", round(time[i], 1), " s)")
   }
 
   if(impute){

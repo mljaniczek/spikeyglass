@@ -1,142 +1,82 @@
 #' Plot the solution path
 #'
-#' Plots the solution paths from ssjgl().
+#' Plots each off-diagonal precision entry (or, with \code{normalize = TRUE},
+#' partial correlation) against v0 along the ladder, one panel per group.
+#' Entries whose PIP is below \code{thres} at a step are drawn as 0.
 #'
-#'
-#'
-#' @param v0s list of v0 input
-#' @param obj object created using ssjgl
-#' @param thres default threshold for probability of edge inclusion
-#' @param normalize True or False (default False) on if normalized covariance should be returned
+#' @param v0s The v0 values of the fit (\code{obj$v0s}).
+#' @param obj An \code{ssjgl} object.
+#' @param thres PIP threshold. Default 0.5.
+#' @param normalize Logical. If \code{TRUE}, plot partial correlations
+#'   instead of precision entries. Default \code{FALSE}.
 #' @param xlab String for xlab. Default empty.
 #' @param ylab string for y-axis label. Default empty.
 #' @param ylim default NULL and will calculate from range
 #' @param main string for main title. Default empty.
-#' @param par default c(1,2) to list layout of output plots
+#' @param par Layout \code{c(rows, cols)} for the K panels, passed to
+#'   \code{par(mfrow = )} and restored on exit. Default \code{c(1, 2)};
+#'   \code{NULL} leaves the layout alone.
 #' @param reverse Default FALSE. If want to reverse direction of plot.
-#' @param position Default "bottomright". For position of legend.
+#' @param position Legend position, or \code{"none"}. Default
+#'   \code{"bottomright"}.
 #' @param ... other parameters passed in to base plot
 #' @return Invisible NULL. Called for side effect (plot).
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
-#' v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 5)
-#' fit <- ssjgl(sim$data_list, penalty = "fused",
-#'              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
-#'              v0s = v0s, maxitr.em = 50, impute = FALSE)
-#' plot_path(v0s, fit, thres = 0.5,
+#' sim <- simulate_ssjgl_data(K = 2, p = 8, n = 100, seed = 42)
+#' fit <- ssjgl(sim$data_list, lambda0 = 1, lambda1 = 1, lambda2 = 1,
+#'              v0s = make_v0_ladder(1, n_steps = 5, min_ratio = 5, max_ratio = 200),
+#'              standardize = TRUE, maxitr.em = 50, impute = FALSE)
+#' plot_path(fit$v0s, fit, thres = 0.5,
 #'           xlab = expression(v[0]), ylab = "Precision entries",
 #'           main = c("Group 1", "Group 2"))
-#' }
 
 plot_path <- function(v0s, obj, thres = 0.5, normalize = FALSE,
                       xlab="", ylab = "", main = "",
-                     par = c(1, 2),
+                      par = c(1, 2),
                       ylim = NULL, reverse=FALSE, position="bottomright",
-                       ...){
-  only = NULL
-  color0 = "gray70"
-  color1 = "darkblue"
-  which.top = c(0,1)[2]
-  cex=.5
-  cex.xlab=1
-  cex.ylab=1
-  vline = NULL
+                      ...){
+  col_edge <- "darkblue"
   NV <- length(obj$thetalist)
   K <- length(obj$thetalist[[1]])
-  P <- dim(obj$thetalist[[1]][[1]])[1]
-  if(is.null(obj$problist1)) obj$problist1 <- obj$problist
-  if(is.null(only)) only <- c(0, 1)
-  if(!is.null(par)) par(mfrow = par)
+  P <- nrow(obj$thetalist[[1]][[1]])
+  if (is.null(obj$problist1)) obj$problist1 <- obj$problist
+  if (length(main) < K) main <- rep(main, length.out = K)
 
-  if(is.null(ylim)){
-    for(k in 1:K){
-      prob <- omega <- array(NA, dim = c(P, P, NV))
-      for(i in 1:NV){
-        prob[, , i] <- obj$problist1[[i]]
-        if(normalize){
-          omega[, , i] <- -cov2cor(obj$thetalist[[i]][[k]])
-        }else{
-          omega[, , i] <- (obj$thetalist[[i]][[k]])
-        }
-      }
-      if(!is.null(prob)){
-        for(i in 1:dim(omega)[3]){
-          omega[, , i] <- omega[, , i] * (prob[, , i] >= thres)
-        }
-      }
-      for(i in 1:dim(omega)[3]){
-        diag(omega[, , i]) <- NA
-      }
-      ylim <- range(c(ylim, omega), na.rm=TRUE)
-    }
-  }
-
-  for(k in 1:K){
-    prob <- omega <- array(NA, dim = c(P, P, NV))
-    for(i in 1:NV){
-      prob[, , i] <- obj$problist1[[i]]
-      if(normalize){
-        omega[, , i] <- -cov2cor(obj$thetalist[[i]][[k]])
-      }else{
-        omega[, , i] <- (obj$thetalist[[i]][[k]])
-      }
-    }
-    if(!is.null(prob)){
-      for(i in 1:dim(omega)[3]){
-        omega[, , i] <- omega[, , i] * (prob[, , i] >= thres)
-      }
-    }
-    for(i in 1:dim(omega)[3]){
+  # entries of group k along the ladder, set to 0 where PIP < thres
+  path_k <- function(k) {
+    omega <- array(NA_real_, dim = c(P, P, NV))
+    for (i in seq_len(NV)) {
+      th <- obj$thetalist[[i]][[k]]
+      omega[, , i] <- if (normalize) -stats::cov2cor(th) else th
+      omega[, , i] <- omega[, , i] * (obj$problist1[[i]] >= thres)
       diag(omega[, , i]) <- NA
     }
-    xlim <- range(v0s)
-    if(reverse) xlim = rev(range(v0s))
-    if(is.null(ylim)) ylim <- range(omega, na.rm=T)
+    omega
+  }
+  paths <- lapply(seq_len(K), path_k)
+  if (is.null(ylim)) ylim <- range(unlist(paths), na.rm = TRUE)
+  xlim <- if (reverse) rev(range(v0s)) else range(v0s)
 
-    plot(v0s, rep(0, length(v0s)), ylim = ylim, col = "white", xlab = xlab,
-         main = main[k], ylab = ylab, xlim = xlim, ...)
-    if(!is.null(vline)) abline(v = v0s[vline], col = "darkblue", lty = 2)
-#browser()
-   # M <- dim(G[[k]])[1]
-    M <- dim(obj$thetalist[[1]][[1]])[1]
-
-
-    # if(1 %in% only && which.top == 0){
-    #   for(i in 2:M){
-    #     for(j in 1:(i-1)){
-    #       if(G[[k]][i, j] != 0){
-    #         lines(v0s, omega[i, j, ], type = "b", col = color1,
-    #               cex=cex, pch = 20)
-    #       }
-    #     }
-    #   }
-    # }
-    #if(0 %in% only){
-      for(i in 2:M){
-        for(j in 1:(i-1)){
-         # if(G[[k]][i, j] == 0 && sum(abs(omega[i,j,])) > 0){
-            # if(G[[k]][i, j] == 0 ){
-            lines(v0s, omega[i, j, ], type = "b", col = color1, lty = 4,
-                  cex=cex, pch = 20)
-          #}
-        }
+  if (!is.null(par)) {
+    old <- graphics::par(mfrow = par)
+    on.exit(graphics::par(old))
+  }
+  for (k in seq_len(K)) {
+    omega <- paths[[k]]
+    graphics::plot(v0s, rep(0, length(v0s)), ylim = ylim, col = "white",
+                   xlab = xlab, main = main[k], ylab = ylab, xlim = xlim, ...)
+    for (i in 2:P) {
+      for (j in 1:(i - 1)) {
+        graphics::lines(v0s, omega[i, j, ], type = "b", col = col_edge,
+                        lty = 4, cex = 0.5, pch = 20)
       }
-    #}
-    # if(1 %in% only && which.top == 1){
-    #   for(i in 2:M){
-    #     for(j in 1:(i-1)){
-    #       if(G[[k]][i, j] != 0){
-    #         lines(v0s, omega[i, j, ], type = "b", col = color1, cex=cex, pch = 20)
-    #       }
-    #     }
-    #   }
-    # }
-    if(0 %in% only && 1 %in% only){
-      if(position != "none") legend(position, lty = c(1, 4), pch= c(20, 20),
-                                    col = c(color1, color0), c("Edge", "Non-edge"))
+    }
+    if (position != "none") {
+      graphics::legend(position, lty = 4, pch = 20, col = col_edge, bty = "n",
+                       legend = sprintf("entry (zero if PIP < %g)", thres))
     }
   }
+  invisible(NULL)
 }

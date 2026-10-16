@@ -1,6 +1,6 @@
 Package: spikeyglass
-Title: Bayesian Joint Spike-and-slab Graphical Lasso
-Version: 0.0.0.9000
+Title: Bayesian Joint Spike-and-Slab Graphical Lasso
+Version: 0.1.0
 Authors@R: 
     c(person(given = "Zehang Richard",
            family = "Li",
@@ -15,7 +15,15 @@ Authors@R:
            role = c("cph"),
            comment = "Author of JGL; vendored and ported routines, see inst/COPYRIGHTS")
            )
-Description: Package implementing the method Bayesian joint spike-and-slab graphical lasso to infer multiple Gaussian graphical models in R. Bayesian treatments of group graphical lasso and fused graphical lasso.
+Description: Estimates multiple related Gaussian graphical models (one
+    precision matrix per group) with the Bayesian joint spike-and-slab
+    graphical lasso of Li, McCormick and Clark (2019) <arXiv:1805.07051>.
+    An EM algorithm with spike-and-slab Laplace priors turns the fused or
+    group graphical lasso into an edge-adaptive penalty, explored along a
+    ladder of spike variances, and returns posterior edge inclusion
+    probabilities. Also provides missing-data imputation, permutation and
+    bootstrap tests for differential edges, cross-validation, and
+    evaluation tools.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -29,9 +37,11 @@ Suggests:
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Depends: 
-    R (>= 2.10)
+    R (>= 4.1.0)
 LazyData: true
-URL: https://mljaniczek.github.io/spikeyglass/
+URL: https://mljaniczek.github.io/spikeyglass/,
+    https://github.com/mljaniczek/spikeyglass
+BugReports: https://github.com/mljaniczek/spikeyglass/issues
 Imports:
     ggmtools,
     graphics,

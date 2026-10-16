@@ -24,7 +24,8 @@ ssjgl(
   normalize = FALSE,
   c = 0.1,
   impute = TRUE,
-  standardize = FALSE
+  standardize = FALSE,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -122,6 +123,10 @@ precision matrices are estimated on the correlation scale and
 whatever the variables' units. Recommended unless the variables are
 already on a common, meaningful scale. Default \code{FALSE} (for
 back-compatibility). Imputed values are returned on the original scale.}
+
+\item{verbose}{Logical. If \code{TRUE}, report progress (each EM
+iteration on the R path, and each ladder step) with \code{message()}.
+Default \code{FALSE}.}
 }
 \value{
 An object of class \code{"ssjgl"}. With \code{standardize = TRUE}

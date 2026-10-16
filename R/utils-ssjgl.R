@@ -263,10 +263,14 @@ negloglik_Gaussian <- function(S, Theta) {
 #' @param Y List of K data matrices.
 #' @param v0s Numeric vector of v0 values to evaluate.
 #' @param folds Integer number of CV folds. Default 5.
-#' @param seed Integer random seed. Default 1.
+#' @param seed Integer random seed for the fold/resample assignment. Default
+#'   1. It is used locally (the previous state is restored on exit), so the caller's
+#'   random-number stream is left unchanged; \code{NULL} uses the current
+#'   stream.
 #' @param penalty,lambda0,lambda1,lambda2,v1,doubly,rho,a,b,maxitr.em,tol.em,maxitr.jgl,tol.jgl,truncate,normalize,c,impute
 #'   Arguments passed to \code{\link{ssjgl}}.
-#' @param verbose Logical. If TRUE, prints fold progress. Default TRUE.
+#' @param verbose Logical. If TRUE, reports fold progress with
+#'   \code{message()}. Default FALSE.
 #'
 #' @return A list with elements:
 #'   \describe{
@@ -309,9 +313,12 @@ SSJGL_select_v0_cv <- function(
     normalize=FALSE,
     c=0.1,
     impute=TRUE,
-    verbose = TRUE
+    verbose = FALSE
 ) {
-  set.seed(seed)
+  if (!is.null(seed)) {
+    restore_rng <- .set_seed_restorable(seed)
+    on.exit(restore_rng(), add = TRUE)
+  }
 
   K <- length(Y)
   p <- ncol(Y[[1]])
@@ -387,7 +394,7 @@ SSJGL_select_v0_cv <- function(
       cv_score[i] <- cv_score[i] + loss_fi
     }
 
-    if (verbose) cat(sprintf("CV fold %d / %d complete\n", f, folds))
+    if (verbose) message(sprintf("CV fold %d / %d complete", f, folds))
   }
 
   # Select best v0
@@ -412,10 +419,14 @@ SSJGL_select_v0_cv <- function(
 #' @param v0_best Scalar v0 value to use.
 #' @param B Integer number of bootstrap samples. Default 200.
 #' @param ci_level Numeric confidence level (e.g., 0.95). Default 0.95.
-#' @param seed Integer random seed. Default 1.
+#' @param seed Integer random seed for the fold/resample assignment. Default
+#'   1. It is used locally (the previous state is restored on exit), so the caller's
+#'   random-number stream is left unchanged; \code{NULL} uses the current
+#'   stream.
 #' @param penalty,lambda0,lambda1,lambda2,v1,doubly,rho,a,b,maxitr.em,tol.em,maxitr.jgl,tol.jgl,truncate,normalize,c,impute
 #'   Arguments passed to \code{\link{ssjgl}}.
-#' @param verbose Logical. If TRUE, prints bootstrap progress. Default TRUE.
+#' @param verbose Logical. If TRUE, reports bootstrap progress with
+#'   \code{message()}. Default FALSE.
 #'
 #' @return A list with elements:
 #'   \describe{
@@ -465,9 +476,12 @@ SSJGL_final_with_pcor_CI <- function(
     normalize=FALSE,
     c=0.1,
     impute=TRUE,
-    verbose = TRUE
+    verbose = FALSE
 ) {
-  set.seed(seed)
+  if (!is.null(seed)) {
+    restore_rng <- .set_seed_restorable(seed)
+    on.exit(restore_rng(), add = TRUE)
+  }
 
   K <- length(Y)
   p <- ncol(Y[[1]])
@@ -534,7 +548,7 @@ SSJGL_final_with_pcor_CI <- function(
       }
     }
 
-    if (verbose) cat(sprintf("Bootstrap %d / %d complete\n", b_iter, B))
+    if (verbose) message(sprintf("Bootstrap %d / %d complete", b_iter, B))
   }
 
   # Entrywise percentile CI
@@ -598,7 +612,10 @@ SSJGL_final_with_pcor_CI <- function(
 #' @param folds Integer number of CV folds. Default 5.
 #' @param B Integer number of bootstrap samples. Default 200.
 #' @param ci_level Numeric confidence level. Default 0.95.
-#' @param seed Integer random seed. Default 1.
+#' @param seed Integer random seed for the fold/resample assignment. Default
+#'   1. It is used locally (the previous state is restored on exit), so the caller's
+#'   random-number stream is left unchanged; \code{NULL} uses the current
+#'   stream.
 #' @param penalty,lambda0,lambda1,lambda2,v1,doubly,rho,a,b
 #'   Arguments passed to \code{\link{ssjgl}}.
 #' @param maxitr.em.cv,maxitr.jgl.cv Max iterations for CV fits (smaller
@@ -606,7 +623,8 @@ SSJGL_final_with_pcor_CI <- function(
 #' @param tol.em,tol.jgl Convergence tolerances.
 #' @param maxitr.em,maxitr.jgl Max iterations for final fit. Defaults 500.
 #' @param truncate,normalize,c,impute Additional \code{ssjgl} arguments.
-#' @param verbose Logical. Default TRUE.
+#' @param verbose Logical. If TRUE, reports progress with \code{message()}.
+#'   Default FALSE.
 #'
 #' @return A list with elements:
 #'   \describe{
@@ -650,7 +668,7 @@ SSJGL_CV_final_pcorCI <- function(
     normalize=FALSE,
     c=0.1,
     impute=TRUE,
-    verbose = TRUE
+    verbose = FALSE
 ) {
   cv <- SSJGL_select_v0_cv(
     Y = Y, v0s = v0s, folds = folds, seed = seed,
@@ -663,7 +681,7 @@ SSJGL_CV_final_pcorCI <- function(
   )
 
   if (verbose) {
-    cat(sprintf("Selected v0 = %g (index %d)\n", cv$v0_best, cv$i_best))
+    message(sprintf("Selected v0 = %g (index %d)", cv$v0_best, cv$i_best))
   }
 
   final <- SSJGL_final_with_pcor_CI(

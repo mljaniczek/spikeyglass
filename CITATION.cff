@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it, and the method paper listed under references."
+title: "spikeyglass: Bayesian Joint Spike-and-Slab Graphical Lasso"
+type: software
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/mljaniczek/spikeyglass"
+url: "https://mljaniczek.github.io/spikeyglass/"
+authors:
+  - family-names: Janiczek
+    given-names: Margaret
+  - family-names: Li
+    given-names: Zehang Richard
+references:
+  - type: conference-paper
+    title: "Bayesian Joint Spike-and-Slab Graphical Lasso"
+    authors:
+      - family-names: Li
+        given-names: Zehang Richard
+      - family-names: McCormick
+        given-names: Tyler H.
+      - family-names: Clark
+        given-names: Samuel J.
+    collection-title: "Proceedings of the 36th International Conference on Machine Learning"
+    volume: 97
+    start: 3877
+    end: 3885
+    year: 2019
+    publisher:
+      name: PMLR
+    url: "https://proceedings.mlr.press/v97/li19h.html"

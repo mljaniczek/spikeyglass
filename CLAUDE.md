@@ -58,7 +58,7 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 
 ### Package infrastructure
 - `R/spikeyglass-package.R` — Package-level imports
-- `R/data.R` — Dataset documentation (simdat)
+- `R/data.R` — Dataset documentation (simdat: 3 groups, p = 50, with true graphs; built by data-raw/simdat.R)
 
 ## Key Hyperparameter Defaults
 

@@ -8,3 +8,8 @@
 ^pkgdown$
 ^\.github$
 ^bench-cache$
+^CLAUDE\.md$
+^\.claude$
+^cran-comments\.md$
+^CITATION\.cff$
+^scripts$
