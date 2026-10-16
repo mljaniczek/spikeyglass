@@ -122,6 +122,9 @@
 #'       \code{center} is the K x p matrix of column means subtracted (NULL if
 #'       the data were not centred) and \code{scale} the K x p matrix of
 #'       standard deviations divided by (NULL unless \code{standardize = TRUE}).}
+#'     \item{args}{Named list of every argument except \code{Y}, as used
+#'       (with the default \code{v0s} filled in); used to refit with the same
+#'       settings, e.g. by \code{\link{diff_edges}}.}
 #'     \item{call}{The matched call.}
 #'   }
 #'
@@ -178,6 +181,13 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
   }
   if (!is.numeric(v0s) || any(v0s <= 0))
     stop("v0s must be a positive numeric vector")
+  # every argument except the data, as used (for refits, e.g. diff_edges())
+  args <- list(penalty = penalty, lambda0 = lambda0, lambda1 = lambda1,
+               lambda2 = lambda2, v1 = v1, v0s = v0s, doubly = doubly,
+               rho = rho, a = a, b = b, maxitr.em = maxitr.em, tol.em = tol.em,
+               maxitr.jgl = maxitr.jgl, tol.jgl = tol.jgl, truncate = truncate,
+               normalize = normalize, c = c, impute = impute,
+               standardize = standardize)
   if (v1 <= 0)
     stop("v1 must be positive")
   if (a <= 0 || b <= 0)
@@ -427,7 +437,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
               normalize = normalize, standardize = standardize,
               center = if(normalize || standardize || has_missing) meanj else NULL,
               scale = if(standardize) sdj else NULL,
-              call = cl)
+              args = args, call = cl)
   class(out) = "ssjgl"
   return(out)
 }

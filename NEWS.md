@@ -2,6 +2,21 @@
 
 ## New features
 
+* New `diff_edges()` tests which edges differ between two groups.
+  `method = "permutation"` refits `ssjgl()` on label-permuted data (pooled
+  null of |Δ| across edges, BH-adjusted p-values); `method = "bootstrap"`
+  gives percentile intervals for Δ. Δ is on the partial-correlation
+  (default) or precision scale. It returns a tidy edge table (`i`, `j`,
+  `node1`, `node2`, `est_g1`, `est_g2`, `diff`, `pvalue`/`p_adj` or
+  `lower`/`upper`, `selected`, and `prob_dissimilar` = P(ξ = 1) for doubly
+  fits), with `print()` and `plot()` methods (network coloured by direction,
+  and a scatter of group 1 vs group 2 estimates). Refits run through
+  future.apply when it is installed (new Suggests), so they are parallel
+  under any `future::plan()`. Results depend only on `set.seed()`.
+
+* The fit stores `args`, every `ssjgl()` argument except the data, so it can
+  be refitted with the same settings.
+
 * `ssjgl()` gains `standardize = TRUE`, which centres and scales every
   variable within each group (`normalize = TRUE` only centres, and is kept
   for back-compatibility). Imputed values are returned on the original scale.

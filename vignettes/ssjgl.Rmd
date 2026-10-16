@@ -193,6 +193,49 @@ for (k in 1:2) {
 plot_roc(metrics$roc[[1]], main = "ROC Curve (Group 1)")
 ```
 
+## Differential edges
+
+`diff_edges()` tests which edges differ between two groups. With
+`method = "permutation"` (the default) it pools the rows of the two groups,
+shuffles the group labels `B` times, and refits `ssjgl()` with the settings
+stored in the fit. The null scores |Δ| are pooled across all edges and
+permutations, and the resulting p-values are adjusted by Benjamini-Hochberg.
+Here Δ is the difference in partial correlations, group 1 minus group 2.
+`method = "bootstrap"` gives percentile intervals for Δ instead.
+
+Each refit repeats the whole v0 ladder, so this is the slow step. If the
+**future.apply** package is installed, the refits run in parallel under any
+`future::plan()`, e.g. `future::plan(future::multisession, workers = 4)`.
+Results depend only on `set.seed()`, not on the plan.
+
+```{r diff_edges}
+set.seed(1)
+de <- diff_edges(fit, Y = sim$data_list, B = 20)
+de
+```
+
+The result is a data frame with one row per edge (`i`, `j`, `node1`,
+`node2`, `est_g1`, `est_g2`, `diff`, `pvalue`, `p_adj`, `selected`). Where
+the concepts match, the column names are those used by multiGGMr's
+`diff_summary()`/`select_diff_edges()`. The plot shows the selected
+edges, coloured by direction, and the group 1 vs group 2 partial
+correlations:
+
+```{r diff_edges_plot, fig.height=4}
+plot(de)
+```
+
+Because this fit uses `doubly = TRUE`, the table also has
+`prob_dissimilar`, the EM's P(ξ = 1) for each edge. It indicates that the
+edge is only weakly shrunk towards equality across groups. It is not a
+calibrated probability that the edge differs, and in real data it can be
+close to 1 for every included edge. Use the permutation p-values for
+inference.
+
+`B = 20` keeps this vignette fast. Use `B = 100` or more in practice: with
+pooled nulls the smallest attainable p-value is about
+1 / (B × number of edges), but BH needs enough permutations to be stable.
+
 ## Select v0 via cross-validation
 
 For real data where the truth is unknown, use cross-validation to select

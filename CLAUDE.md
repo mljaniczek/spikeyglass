@@ -42,6 +42,9 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 - `R/methods.R` — `print.ssjgl`, `summary.ssjgl`, `coef.ssjgl`, `fitted.ssjgl`
 - `R/helpers.R` — `extract_precision()`, `extract_adjacency()`, `extract_pcor()`, `extract_probabilities()`
 
+### Differential edges
+- `R/diff_edges.R` — `diff_edges()`: permutation (pooled null, BH) or bootstrap inference on group differences; refits via `fit$args`, optionally parallel through future.apply; `print`/`plot` methods. Edge-table columns follow multiGGMr where concepts match (`i`, `j`, `lower`, `upper`).
+
 ### Evaluation and visualization
 - `R/utils-eval.R` — `confusion_at_threshold()`, `roc_auc()`, `compute_metrics()`, `plot_roc()`
 - `R/plot_path.R` — `plot_path()`: Solution path visualization

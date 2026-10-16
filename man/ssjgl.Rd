@@ -159,6 +159,9 @@ group names (from \code{names(Y)}, possibly NULL).}
 \code{center} is the K x p matrix of column means subtracted (NULL if
 the data were not centred) and \code{scale} the K x p matrix of
 standard deviations divided by (NULL unless \code{standardize = TRUE}).}
+\item{args}{Named list of every argument except \code{Y}, as used
+(with the default \code{v0s} filled in); used to refit with the same
+settings, e.g. by \code{\link{diff_edges}}.}
 \item{call}{The matched call.}
 }
 }
