@@ -25,6 +25,6 @@ test_that("ssjgl() reproduces the reference fits to 1e-10", {
       expect_equal(new$pi2list[[i]], old$pi2list[[i]], tolerance = 1e-10, label = nm)
     }
     expect_equal(new$imputed, old$imputed, tolerance = 1e-10, label = nm)
-    expect_identical(new$missed, old$missed, label = nm)
+    expect_identical(unname(new$missed), unname(old$missed), label = nm)
   }
 })

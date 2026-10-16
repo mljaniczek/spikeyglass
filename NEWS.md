@@ -1,5 +1,45 @@
 # spikeyglass (development version)
 
+## New features
+
+* `ssjgl()` gains `standardize = TRUE`, which centres and scales every
+  variable within each group (`normalize = TRUE` only centres, and is kept
+  for back-compatibility). Imputed values are returned on the original scale.
+
+* The fitted `ssjgl` object now stores `v0s`, the hyperparameters (`lambda0`,
+  `lambda1`, `lambda2`, `v1`, `a`, `b`, `penalty`, `doubly`), the dimensions
+  (`n`, `p`, `K`), `varnames`, `groupnames`, the preprocessing (`normalize`,
+  `standardize`, `center`, `scale`) and the `call`. `fit$v0s` was
+  previously `NULL`.
+
+* Variable names (from `colnames(Y[[1]])`, or `V1, ..., Vp`) are now set as
+  dimnames on every p x p output, on both the C++ and the R path; the C++
+  path previously dropped them. Group names are taken from `names(Y)`.
+
+* `plot_stability()` defaults to `fit$v0s`.
+
+## Changes to defaults
+
+* One recommended v0 ladder, chosen by a simulation study (see
+  `vignette("parameter-exploration")` and `data-raw/v0-ladder-study.R`):
+  three steps with `lambda1/v0 = 10, 31.6, 100`.
+  * `ssjgl()` now defaults to `v0s = NULL`, meaning `make_v0_ladder(lambda1)`.
+    At `lambda1 = 1` this is `c(0.1, 0.0316, 0.01)`, essentially the old
+    default `c(0.1, 0.03, 0.01)`. For other `lambda1` the default ladder now
+    scales with `lambda1`, because only `lambda1/v0` enters the model.
+  * `make_v0_ladder()` defaults change from `n_steps = 10, min_ratio = 5,
+    max_ratio = 500` to `n_steps = 3, min_ratio = 10, max_ratio = 100`.
+    `n_steps = 1` is now allowed.
+
+## Documentation
+
+* The documentation of `v0` is corrected. The spike and slab are Laplace
+  priors on the precision entries with rates `lambda1/v0` and `lambda1/v1`
+  (scale `v0/lambda1`), not normal priors with standard deviation
+  `sqrt(v0)` on the partial-correlation scale. Both vignettes, `?ssjgl` and
+  `?make_v0_ladder` were rewritten. They now explain what `lambda1/v0` does
+  in the E-step and the M-step, and that `normalize = TRUE` only centres.
+
 ## Dependencies
 
 * spikeyglass no longer depends on JGL, which was archived from CRAN on

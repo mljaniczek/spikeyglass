@@ -12,7 +12,7 @@
 
 ### Algorithm: EM with dynamic posterior exploration
 
-1. **Outer loop**: Iterate over a decreasing ladder of spike variance `v0s` with warm-starting between steps (dynamic posterior exploration, Section 3.3 of paper). Smaller v0 → stronger shrinkage for unlikely edges.
+1. **Outer loop**: Iterate over a decreasing ladder of spike variance `v0s` with warm-starting between steps (dynamic posterior exploration, Section 3.3 of paper). Smaller v0 → larger spike rate `lambda1/v0` → stronger shrinkage for unlikely edges. M-step soft-thresholds spike edges at ~`lambda1/(n v0)` on the covariance scale.
 
 2. **E-step** (`gete()` / `gete.doubly()`): Compute posterior probabilities of edge inclusion P(delta=1) and (if doubly) similarity P(xi=1). Produces adaptive penalty weights `d = (1-prob)/v0 + prob/v1` for the M-step. Uses log-sum-exp trick for numerical stability.
 
@@ -59,13 +59,14 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 
 | Parameter | Default | Notes |
 |-----------|---------|-------|
-| `v0s` | `seq(0.0001, 0.01, len=10)` | Spike variance ladder (decreasing = more sparse) |
+| `v0s` | `NULL` = `make_v0_ladder(lambda1)` = `lambda1/c(10, 31.6, 100)` | Decreasing spike ladder. Spike is Laplace with rate `lambda1/v0` on precision entries (scale `v0/lambda1`); only `lambda1/v0` matters. Chosen by `data-raw/v0-ladder-study.R` |
 | `v1` | 1 | Slab variance |
 | `lambda0` | — | Diagonal penalty (user must specify) |
-| `lambda1` | — | Off-diagonal sparsity penalty (user must specify) |
+| `lambda1` | — | Off-diagonal sparsity penalty (user must specify; 1 with `standardize = TRUE`, as in Li et al.) |
 | `lambda2` | — | Cross-group similarity penalty (user must specify) |
 | `a`, `b` | 1, 1 | Beta prior for pi_delta. Use b=p for sparse prior |
 | `doubly` | FALSE | Whether to use doubly spike-and-slab |
+| `standardize` | FALSE | Centre and scale columns per group (recommended); `normalize` only centres |
 | `maxitr.em` | 500 | Max EM iterations per v0 step |
 | `tol.em` | 1e-4 | EM convergence tolerance (max abs change in Theta) |
 

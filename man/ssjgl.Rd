@@ -11,7 +11,7 @@ ssjgl(
   lambda1,
   lambda2,
   v1 = 1,
-  v0s = c(0.1, 0.03, 0.01),
+  v0s = NULL,
   doubly = FALSE,
   rho = 1,
   a = 1,
@@ -23,7 +23,8 @@ ssjgl(
   truncate = 1e-05,
   normalize = FALSE,
   c = 0.1,
-  impute = TRUE
+  impute = TRUE,
+  standardize = FALSE
 )
 }
 \arguments{
@@ -38,15 +39,14 @@ The method is relatively insensitive to this value; \code{lambda0 = 1} is
 recommended in most cases.}
 
 \item{lambda1}{Scalar (or matrix) base penalty on off-diagonal entries
-(edge-wise sparsity). The E-step produces adaptive weights that multiply
-this value, so the effective penalty is edge-specific. The method is
-relatively insensitive to the absolute value of \code{lambda1} (Li et al.,
-2019); what matters most is the ratio \code{lambda1/v0}. Guidance:
-\itemize{
-\item Normalized data (\code{normalize = TRUE}): use 0.01--0.1
-\item Raw data with moderate variance: use 0.5--1
-\item p >> n settings: use smaller values (0.01)
-}}
+(edge-wise sparsity). In the prior, each off-diagonal precision entry
+has a Laplace prior with rate \code{lambda1/v0} in the spike and
+\code{lambda1/v1} in the slab, so sparsity is governed by the ratio
+\code{lambda1/v0} (see \code{v0s}). Li et al. (2019) use
+\code{lambda1 = 1} with variables on unit scale, and that is the
+recommended starting point with \code{standardize = TRUE}. If the data
+are not standardised, the meaning of \code{lambda1} depends on the
+variables' scales, because the penalty acts on precision entries.}
 
 \item{lambda2}{Scalar (or matrix) base penalty for the cross-group
 similarity term. Controls borrowing of strength across groups:
@@ -60,16 +60,21 @@ similarity term. Controls borrowing of strength across groups:
 \item{v1}{Numeric slab variance parameter. Default 1. Should generally be
 left at 1.}
 
-\item{v0s}{Numeric vector of spike variance parameters, typically
-\strong{decreasing}. Smaller v0 = stronger shrinkage for unlikely edges.
-The spike standard deviation \code{sqrt(v0)} sets the scale below which
-partial correlations are considered noise. For normalized data where
-partial correlations live in \link{-1, 1}, \code{v0 = 0.01} (spike SD = 0.1)
-provides a natural noise/signal boundary. The default
-\code{c(0.1, 0.03, 0.01)} provides a short warm-start ladder ending at
-this target. See \code{vignette("parameter-exploration")} for guidance
-on choosing v0 and the \code{\link{make_v0_ladder}} helper for generating
-longer exploration ladders.}
+\item{v0s}{Numeric vector of spike variances, \strong{decreasing}: the
+ladder for the dynamic posterior exploration of Li et al. (2019), each
+step warm-started from the previous one. The spike is a Laplace prior on
+the precision entries with rate \code{lambda1/v0}, i.e. scale
+\code{v0/lambda1}; it is not a normal prior, and \code{sqrt(v0)} has no
+partial-correlation interpretation. Only \code{lambda1/v0} matters. As a
+rough guide, a non-edge's precision entry is soft-thresholded in the
+M-step at about \code{lambda1/(n v0)} on the covariance scale (the
+correlation scale for standardised data), for group sample size
+\code{n}. Default \code{NULL} uses \code{make_v0_ladder(lambda1)}, the
+3-step ladder \code{lambda1/v0 = 10, 31.6, 100}, i.e.
+\code{v0s = c(0.1, 0.0316, 0.01)} at \code{lambda1 = 1}. This default was
+chosen by a simulation study; see \code{vignette("parameter-exploration")}
+and \code{\link{make_v0_ladder}}. It requires a positive scalar
+\code{lambda1}; otherwise supply \code{v0s}.}
 
 \item{doubly}{Logical. If \code{TRUE}, uses doubly spike-and-slab prior
 with separate indicators for edge existence (delta) and cross-group
@@ -93,12 +98,13 @@ a sparse prior.}
 \item{truncate}{Numeric threshold below which entries are zeroed. Default
 1e-5.}
 
-\item{normalize}{Logical. If \code{TRUE}, mean-centers each variable.
-Default \code{FALSE}. Centring does not change the estimates, because
-the sample covariance is centred anyway. When missing values are imputed
-the data are always centred internally (the conditional-mean imputation
-assumes mean zero) and the imputed values are returned on the original
-scale.}
+\item{normalize}{Logical. If \code{TRUE}, mean-centres each variable
+within each group. It does \emph{not} scale. Default \code{FALSE}.
+Centring does not change the estimates, because the sample covariance is
+centred anyway. When missing values are imputed the data are always
+centred internally (the conditional-mean imputation assumes mean zero),
+and the imputed values are returned on the original scale. Kept for
+back-compatibility; see \code{standardize}.}
 
 \item{c}{Numeric diagonal regularization for initial precision estimate.
 Default 0.1.}
@@ -108,9 +114,19 @@ MVN at each EM iteration. The M-step then uses the expected sample
 covariance given the observed data, i.e. the covariance of the imputed
 data plus the conditional covariance of the missing cells (Li et al.,
 2019, supplement B). Default \code{TRUE}.}
+
+\item{standardize}{Logical. If \code{TRUE}, centres \emph{and} scales each
+variable to unit variance within each group before fitting, so the
+precision matrices are estimated on the correlation scale and
+\code{lambda1}, \code{lambda2} and \code{v0s} have the same meaning
+whatever the variables' units. Recommended unless the variables are
+already on a common, meaningful scale. Default \code{FALSE} (for
+back-compatibility). Imputed values are returned on the original scale.}
 }
 \value{
-An object of class \code{"ssjgl"}, a list with elements:
+An object of class \code{"ssjgl"}. With \code{standardize = TRUE}
+the precision matrices are those of the standardised variables. It is a
+list with elements:
 \describe{
 \item{thetalist}{List (length = length(v0s)) of lists of K precision
 matrices (p x p) at each v0 step.}
@@ -132,6 +148,18 @@ NULL if \code{doubly = FALSE}.}
 \item{imputed}{Numeric vector of imputed values on the original data
 scale (one per row of \code{missed}), or NULL.}
 \item{missed}{Matrix of (group, row, col) for missing values, or NULL.}
+\item{v0s, v1, lambda0, lambda1, lambda2, penalty, doubly, a, b}{The
+hyperparameters used.}
+\item{n, p, K}{Sample sizes (length K), number of variables and number
+of groups.}
+\item{varnames, groupnames}{Variable names (from \code{colnames(Y[[1]])},
+or \code{V1, ..., Vp}) used as dimnames of every p x p output, and
+group names (from \code{names(Y)}, possibly NULL).}
+\item{normalize, standardize, center, scale}{The preprocessing used:
+\code{center} is the K x p matrix of column means subtracted (NULL if
+the data were not centred) and \code{scale} the K x p matrix of
+standard deviations divided by (NULL unless \code{standardize = TRUE}).}
+\item{call}{The matched call.}
 }
 }
 \description{
@@ -143,15 +171,16 @@ penalization.
 }
 \details{
 The algorithm follows the dynamic posterior exploration strategy of Li et al.
-(2019), iterating over a decreasing ladder of spike variance parameters
-\code{v0s} with warm-starting between steps.
+(2019), iterating over a decreasing ladder of spike variances \code{v0s}
+(increasing spike penalty \code{lambda1/v0}) with warm-starting between
+steps.
 }
 \examples{
 sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
 fit <- ssjgl(sim$data_list, penalty = "fused",
-             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
-             v0s = c(0.1, 0.03, 0.01),
-             maxitr.em = 50, impute = FALSE)
+             lambda0 = 1, lambda1 = 1, lambda2 = 1,
+             standardize = TRUE, maxitr.em = 50, impute = FALSE)
+fit$v0s  # the default ladder, make_v0_ladder(lambda1 = 1)
 print(fit)
 adj <- extract_adjacency(fit, threshold = 0.5)
 sum(adj[[1]][upper.tri(adj[[1]])])  # estimated edge count
