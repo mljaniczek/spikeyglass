@@ -1,132 +1,15 @@
 # Evaluation utilities for spikeyglass
-# Functions adapted from multiGGMr (github.com/mljaniczek/multiGGMr)
-# for consistent interface across multiple GGM packages.
-
-#' Compute confusion matrix metrics at a threshold
-#'
-#' Given a score matrix (e.g., edge inclusion probabilities) and a binary
-#' truth matrix, computes TP, FP, TN, FN, TPR, FPR, precision, and F1
-#' at a given threshold. Only the upper triangle is used by default.
-#'
-#' @param score_mat Numeric matrix of scores (e.g., probabilities in \[0,1\]).
-#' @param truth_mat Binary matrix of true edges (1 = edge, 0 = no edge).
-#' @param threshold Numeric threshold; scores >= threshold are predicted as edges.
-#'   Default 0.5.
-#' @param upper_only Logical; if TRUE (default), only use upper triangle.
-#'
-#' @return A named list with elements: TP, FP, TN, FN, TPR (sensitivity),
-#'   FPR (1-specificity), precision, F1.
-#' @export
-#'
-#' @examples
-#' # Simulated score and truth matrices
-#' truth <- matrix(c(0,1,0, 1,0,1, 0,1,0), 3, 3)
-#' scores <- matrix(c(0,0.9,0.1, 0.9,0,0.8, 0.1,0.8,0), 3, 3)
-#' confusion_at_threshold(scores, truth, threshold = 0.5)
-confusion_at_threshold <- function(score_mat, truth_mat, threshold = 0.5,
-                                   upper_only = TRUE) {
-  score_mat <- as.matrix(score_mat)
-  truth_mat <- as.matrix(truth_mat)
-  stopifnot(nrow(score_mat) == nrow(truth_mat),
-            ncol(score_mat) == ncol(truth_mat))
-
-  if (upper_only) {
-    idx <- upper.tri(score_mat)
-  } else {
-    idx <- matrix(TRUE, nrow(score_mat), ncol(score_mat))
-    diag(idx) <- FALSE
-  }
-
-  pred <- as.integer(score_mat[idx] >= threshold)
-  truth <- as.integer(truth_mat[idx] != 0)
-
-  TP <- sum(pred == 1 & truth == 1)
-  FP <- sum(pred == 1 & truth == 0)
-  TN <- sum(pred == 0 & truth == 0)
-  FN <- sum(pred == 0 & truth == 1)
-
-  TPR <- if ((TP + FN) > 0) TP / (TP + FN) else 0
-  FPR <- if ((FP + TN) > 0) FP / (FP + TN) else 0
-  prec <- if ((TP + FP) > 0) TP / (TP + FP) else 0
-  F1 <- if ((prec + TPR) > 0) 2 * prec * TPR / (prec + TPR) else 0
-
-  list(TP = TP, FP = FP, TN = TN, FN = FN,
-       TPR = TPR, FPR = FPR, precision = prec, F1 = F1)
-}
-
-
-#' Compute ROC curve and AUC
-#'
-#' Computes the ROC curve (TPR vs FPR at varying thresholds) and the
-#' area under the curve (AUC) for edge selection. Only the upper triangle
-#' of the matrices is used.
-#'
-#' @param score_mat Numeric matrix of continuous scores (e.g., edge inclusion
-#'   probabilities or absolute partial correlations).
-#' @param truth_mat Binary matrix of true edges (1 = edge, 0 = no edge).
-#'
-#' @return A list with elements:
-#'   \describe{
-#'     \item{FPR}{Numeric vector of false positive rates.}
-#'     \item{TPR}{Numeric vector of true positive rates.}
-#'     \item{thresholds}{Numeric vector of thresholds used.}
-#'     \item{AUC}{Scalar area under the ROC curve (trapezoidal rule).}
-#'   }
-#' @export
-#'
-#' @examples
-#' truth <- matrix(c(0,1,0,0, 1,0,1,0, 0,1,0,1, 0,0,1,0), 4, 4)
-#' scores <- matrix(c(0,.9,.1,.05, .9,0,.8,.1, .1,.8,0,.7, .05,.1,.7,0), 4, 4)
-#' roc <- roc_auc(scores, truth)
-#' roc$AUC
-roc_auc <- function(score_mat, truth_mat) {
-  score_mat <- as.matrix(score_mat)
-  truth_mat <- as.matrix(truth_mat)
-
-  idx <- upper.tri(score_mat)
-  scores <- score_mat[idx]
-  truth <- as.integer(truth_mat[idx] != 0)
-
-  n_pos <- sum(truth == 1)
-  n_neg <- sum(truth == 0)
-
-  if (n_pos == 0 || n_neg == 0) {
-    return(list(FPR = c(0, 1), TPR = c(0, 1),
-                thresholds = c(Inf, -Inf), AUC = NA_real_))
-  }
-
-  # Unique thresholds
-  thresholds <- c(Inf, sort(unique(scores), decreasing = TRUE), -Inf)
-  tpr_vec <- numeric(length(thresholds))
-  fpr_vec <- numeric(length(thresholds))
-
-  for (i in seq_along(thresholds)) {
-    pred <- as.integer(scores >= thresholds[i])
-    tpr_vec[i] <- sum(pred == 1 & truth == 1) / n_pos
-    fpr_vec[i] <- sum(pred == 1 & truth == 0) / n_neg
-  }
-
-  # Sort by FPR for proper curve
-  ord2 <- order(fpr_vec, tpr_vec)
-  fpr_vec <- fpr_vec[ord2]
-  tpr_vec <- tpr_vec[ord2]
-  thresholds <- thresholds[ord2]
-
-  # AUC via trapezoidal rule
-  auc <- 0
-  for (i in 2:length(fpr_vec)) {
-    auc <- auc + (fpr_vec[i] - fpr_vec[i - 1]) * (tpr_vec[i] + tpr_vec[i - 1]) / 2
-  }
-
-  list(FPR = fpr_vec, TPR = tpr_vec, thresholds = thresholds, AUC = auc)
-}
-
+# The shared metrics (roc_auc(), confusion_at_threshold(), plot_roc(),
+# precision_to_pcor()) live in ggmtools and are re-exported (R/reexports.R).
 
 #' Compute comprehensive evaluation metrics for an ssjgl fit
 #'
 #' Given an ssjgl fit object and the true adjacency/precision matrices,
 #' computes edge-level metrics (TPR, FPR, AUC) and estimation error
 #' (Frobenius norm, KL divergence).
+#'
+#' The edge indicator in SSJGL is shared by all groups, so every group is
+#' scored with the same PIP matrix (against its own true graph).
 #'
 #' @param fit An object of class \code{ssjgl}.
 #' @param true_adj List of K binary adjacency matrices (true graph structure).
@@ -188,39 +71,11 @@ compute_metrics <- function(fit, true_adj, true_omega = NULL,
 
   mean_tpr <- mean(vapply(per_group, function(x) x$TPR, numeric(1)))
   mean_fpr <- mean(vapply(per_group, function(x) x$FPR, numeric(1)))
-  mean_auc <- mean(vapply(roc_list, function(x) x$AUC, numeric(1)), na.rm = TRUE)
+  mean_auc <- mean(vapply(roc_list, function(x) x$auc, numeric(1)), na.rm = TRUE)
 
   list(
     per_group = per_group,
     roc = roc_list,
     overall = list(mean_TPR = mean_tpr, mean_FPR = mean_fpr, mean_AUC = mean_auc)
   )
-}
-
-
-#' Plot ROC curve
-#'
-#' Plots the ROC curve from a \code{\link{roc_auc}} result.
-#'
-#' @param roc_obj A list returned by \code{\link{roc_auc}}.
-#' @param main Title for the plot. Default \code{"ROC Curve"}.
-#' @param ... Additional arguments passed to \code{\link[graphics]{plot}}.
-#'
-#' @return Invisible NULL. Called for side effect (plot).
-#' @export
-#'
-#' @examples
-#' truth <- matrix(c(0,1,0,0, 1,0,1,0, 0,1,0,1, 0,0,1,0), 4, 4)
-#' scores <- matrix(c(0,.9,.1,.05, .9,0,.8,.1, .1,.8,0,.7, .05,.1,.7,0), 4, 4)
-#' roc <- roc_auc(scores, truth)
-#' plot_roc(roc)
-plot_roc <- function(roc_obj, main = "ROC Curve", ...) {
-  graphics::plot(roc_obj$FPR, roc_obj$TPR, type = "l",
-                 xlab = "False Positive Rate", ylab = "True Positive Rate",
-                 main = main, xlim = c(0, 1), ylim = c(0, 1), ...)
-  graphics::abline(a = 0, b = 1, lty = 2, col = "gray50")
-  graphics::legend("bottomright",
-                   legend = sprintf("AUC = %.3f", roc_obj$AUC),
-                   bty = "n")
-  invisible(NULL)
 }

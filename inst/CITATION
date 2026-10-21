@@ -1,0 +1,36 @@
+bibentry(
+  bibtype  = "InProceedings",
+  header   = "To cite the method, please use:",
+  title    = "Bayesian Joint Spike-and-Slab Graphical Lasso",
+  author   = c(person("Zehang Richard", "Li"),
+               person("Tyler H.", "McCormick"),
+               person("Samuel J.", "Clark")),
+  booktitle = "Proceedings of the 36th International Conference on Machine Learning",
+  series   = "Proceedings of Machine Learning Research",
+  volume   = "97",
+  pages    = "3877--3885",
+  year     = "2019",
+  publisher = "PMLR",
+  url      = "https://proceedings.mlr.press/v97/li19h.html",
+  textVersion = paste(
+    "Li, Z. R., McCormick, T. H. and Clark, S. J. (2019).",
+    "Bayesian Joint Spike-and-Slab Graphical Lasso.",
+    "Proceedings of the 36th International Conference on Machine Learning,",
+    "PMLR 97:3877-3885.")
+)
+
+bibentry(
+  bibtype  = "Manual",
+  header   = "To cite the spikeyglass package, please use:",
+  title    = "spikeyglass: Bayesian Joint Spike-and-Slab Graphical Lasso",
+  author   = c(person("Margaret", "Janiczek"),
+               person("Zehang Richard", "Li")),
+  year     = "2026",
+  note     = paste("R package version", utils::packageVersion("spikeyglass")),
+  url      = "https://github.com/mljaniczek/spikeyglass",
+  textVersion = paste0(
+    "Janiczek, M. and Li, Z. R. (2026). spikeyglass: Bayesian Joint ",
+    "Spike-and-Slab Graphical Lasso. R package version ",
+    utils::packageVersion("spikeyglass"), ". ",
+    "https://github.com/mljaniczek/spikeyglass")
+)

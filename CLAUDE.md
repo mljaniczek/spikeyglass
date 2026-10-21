@@ -12,11 +12,11 @@
 
 ### Algorithm: EM with dynamic posterior exploration
 
-1. **Outer loop**: Iterate over a decreasing ladder of spike variance `v0s` with warm-starting between steps (dynamic posterior exploration, Section 3.3 of paper). Smaller v0 → stronger shrinkage for unlikely edges.
+1. **Outer loop**: Iterate over a decreasing ladder of spike variance `v0s` with warm-starting between steps (dynamic posterior exploration, Section 3.3 of paper). Smaller v0 → larger spike rate `lambda1/v0` → stronger shrinkage for unlikely edges. M-step soft-thresholds spike edges at ~`lambda1/(n v0)` on the covariance scale.
 
 2. **E-step** (`gete()` / `gete.doubly()`): Compute posterior probabilities of edge inclusion P(delta=1) and (if doubly) similarity P(xi=1). Produces adaptive penalty weights `d = (1-prob)/v0 + prob/v1` for the M-step. Uses log-sum-exp trick for numerical stability.
 
-3. **M-step** (`JGL.adaptive()` + `admm.iters.adaptive()`): ADMM-based Joint Graphical Lasso with matrix-valued lambda1/lambda2 penalties (edge-specific weights from E-step). Theta update via eigendecomposition, Z update via JGL's `flsa2`/`dsgl`.
+3. **M-step** (`JGL.adaptive()` + `admm.iters.adaptive()`): ADMM-based Joint Graphical Lasso with matrix-valued lambda1/lambda2 penalties (edge-specific weights from E-step). Theta update via eigendecomposition, Z update via C++ ports of JGL's `flsa2`/`flsa.general`/`dsgl`.
 
 4. **Pi update**: Beta posterior mode: `pi_delta = (a + sum_edges(prob1) - 1) / (a + b + n_edges - 2)`.
 
@@ -35,14 +35,20 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 - `R/ssjgl.R` — Main `ssjgl()` function: EM algorithm with v0 ladder
 - `R/utils-gete.R` — `gete()`, `gete.doubly()`: E-step computation; `getmissing()`: MVN imputation
 - `R/utils-admm.R` — `admm.iters.adaptive()`: ADMM iterations with matrix-valued penalties
+- `R/jgl-vendored.R` — `penalty.as.matrix()`, `admm.iters.unconnected.S()` (from JGL 2.3.2, MIT)
 - `R/utils-ssjgl.R` — `JGL.adaptive()`: Adapted JGL with block screening; `negloglik_Gaussian()`, `precision_to_pcor()`, `SSJGL_select_v0_cv()`, `SSJGL_final_with_pcor_CI()`, `SSJGL_CV_final_pcorCI()`
 
 ### S3 methods and helpers
 - `R/methods.R` — `print.ssjgl`, `summary.ssjgl`, `coef.ssjgl`, `fitted.ssjgl`
 - `R/helpers.R` — `extract_precision()`, `extract_adjacency()`, `extract_pcor()`, `extract_probabilities()`
 
+### Differential edges
+- `R/diff_edges.R` — `diff_edges()`: permutation (pooled null, BH) or bootstrap inference on group differences; refits via `fit$args`, optionally parallel through future.apply; `print`/`plot` methods. Edge-table columns follow multiGGMr where concepts match (`i`, `j`, `lower`, `upper`).
+
 ### Evaluation and visualization
-- `R/utils-eval.R` — `confusion_at_threshold()`, `roc_auc()`, `compute_metrics()`, `plot_roc()`
+- `R/utils-eval.R` — `compute_metrics()`
+- `R/reexports.R` — re-exports from ggmtools: `precision_to_pcor()`, `confusion_at_threshold()`, `roc_auc()`, `plot_roc()`, `pip_table()`, `pcor_estimate()`, `edge_index()`
+- `R/methods.R` also has `pip_table.ssjgl()` / `pcor_estimate.ssjgl()` (ggmtools generics)
 - `R/plot_path.R` — `plot_path()`: Solution path visualization
 - `R/getmetric.R` — `getmetric()`: Legacy single-group metrics
 - `R/getdiffmetric.R` — `getdiffmetric()`: Differential edge metrics
@@ -52,26 +58,26 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 
 ### Package infrastructure
 - `R/spikeyglass-package.R` — Package-level imports
-- `R/data.R` — Dataset documentation (simdat)
+- `R/data.R` — Dataset documentation (simdat: 3 groups, p = 50, with true graphs; built by data-raw/simdat.R)
 
 ## Key Hyperparameter Defaults
 
 | Parameter | Default | Notes |
 |-----------|---------|-------|
-| `v0s` | `seq(0.0001, 0.01, len=10)` | Spike variance ladder (decreasing = more sparse) |
+| `v0s` | `NULL` = `make_v0_ladder(lambda1)` = `lambda1/c(10, 31.6, 100)` | Decreasing spike ladder. Spike is Laplace with rate `lambda1/v0` on precision entries (scale `v0/lambda1`); only `lambda1/v0` matters. Chosen by `data-raw/v0-ladder-study.R` |
 | `v1` | 1 | Slab variance |
 | `lambda0` | — | Diagonal penalty (user must specify) |
-| `lambda1` | — | Off-diagonal sparsity penalty (user must specify) |
+| `lambda1` | — | Off-diagonal sparsity penalty (user must specify; 1 with `standardize = TRUE`, as in Li et al.) |
 | `lambda2` | — | Cross-group similarity penalty (user must specify) |
 | `a`, `b` | 1, 1 | Beta prior for pi_delta. Use b=p for sparse prior |
 | `doubly` | FALSE | Whether to use doubly spike-and-slab |
+| `standardize` | FALSE | Centre and scale columns per group (recommended); `normalize` only centres |
 | `maxitr.em` | 500 | Max EM iterations per v0 step |
 | `tol.em` | 1e-4 | EM convergence tolerance (max abs change in Theta) |
 
 ## Dependencies
 
-- `JGL` — Core ADMM routines (flsa2, dsgl, flsa.general, penalty.as.matrix)
-- `igraph` — Block structure detection in screening step
+- `Rcpp`, `RcppArmadillo` — C++ EM loop and ADMM (JGL routines vendored/ported; JGL and igraph are no longer dependencies)
 - `MASS` — `mvrnorm()` for data simulation
 - `graphics`, `stats` — Base R plotting and statistics
 
@@ -100,7 +106,7 @@ R CMD INSTALL .
 
 2. **Convergence criterion (fixed)**: Original used `max(diff, (theta_last[[k]] - theta[[k]])^2)` which computes element-wise squared differences. Fixed to `max(abs(...))` for consistent tolerance semantics.
 
-3. **JGL internal access**: Package uses `JGL:::` to access unexported functions (flsa2, dsgl, flsa.general, penalty.as.matrix). These may break if JGL changes internals. Locations: `R/utils-ssjgl.R` (`penalty.as.matrix`) and `R/utils-admm.R` (R fallback ADMM for fused K>2). `admm.iters.unconnected` is vendored as `admm.iters.unconnected.S()` in `R/utils-admm.R`. The C++ ADMM path reimplements flsa2 and dsgl.
+3. **JGL vendored (2026-10)**: JGL was archived from CRAN, so it is no longer a dependency. `R/jgl-vendored.R` holds `penalty.as.matrix()` and `admm.iters.unconnected.S()`; `src/admm_adaptive.cpp` ports flsa2, dsgl and flsa.general (`flsa_general_update()`). Attribution is in `inst/COPYRIGHTS`. igraph has also been dropped: `connected_components_cpp()` does block detection. `tests/testthat/fixtures/` holds the pre-vendoring reference fits and the JGL flsa.general outputs.
 
 4. **Imputation meanj indexing (fixed)**: `ssjgl.R` line 356 used `meanj[missed[, 3]]` which indexes a (K x p) matrix with a single vector (treated as linear indexing). Fixed to `meanj[cbind(missed[, 1], missed[, 3])]` for correct group-specific mean restoration.
 
@@ -108,14 +114,16 @@ R CMD INSTALL .
 
 ## TODO (low priority)
 
-- **JGL ::: fragility**: Long-term, consider vendoring the 4-5 JGL internal functions (flsa2, dsgl, flsa.general, penalty.as.matrix) directly into spikeyglass to remove the fragile `:::` dependency. The C++ ADMM path already reimplements the core routines for K<=2.
+- None currently.
 
-## Cross-project Notes (multiGGMr)
+## Cross-project Notes (multiGGMr, ggmtools)
 
-Shared utility functions adapted between packages (keeping consistent signatures):
-- `precision_to_pcor()` — Precision to partial correlation conversion
-- `confusion_at_threshold()` / `roc_auc()` — Evaluation metrics
-- `simulate_ssjgl_data()` — Data simulation (adapted from multiGGMr's `simulate_multiggm()`)
+Functions shared with multiGGMr (github.com/mljaniczek/multiGGMr) live in **ggmtools** (github.com/mljaniczek/ggmtools; local checkout `../ggmtools`), and both packages re-export them:
+- `precision_to_pcor()`, `confusion_at_threshold()`, `roc_auc()` (tie-correct; returns `auc`), `plot_roc()`
+- generics `pip_table()` (long edge table: i, j, node1, node2, group, pip) and `pcor_estimate()` (list of K pcor matrices); each package registers methods
+- `edge_index()` / `as_pip_table()` for the shared edge-table format; dataset `brca_pi3k`
+
+Change shared behaviour in ggmtools, not here. Until ggmtools is on CRAN, DESCRIPTION has `Remotes: mljaniczek/ggmtools`.
 
 Both packages are for multiple GGM estimation but use different methods:
 - `spikeyglass`: EM + spike-and-slab + JGL (Li et al. 2019)

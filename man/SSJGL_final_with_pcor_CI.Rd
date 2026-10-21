@@ -27,7 +27,7 @@ SSJGL_final_with_pcor_CI(
   normalize = FALSE,
   c = 0.1,
   impute = TRUE,
-  verbose = TRUE
+  verbose = FALSE
 )
 }
 \arguments{
@@ -39,11 +39,17 @@ SSJGL_final_with_pcor_CI(
 
 \item{ci_level}{Numeric confidence level (e.g., 0.95). Default 0.95.}
 
-\item{seed}{Integer random seed. Default 1.}
+\item{seed}{Integer random seed for the fold/resample assignment. Default
+\enumerate{
+\item It is used locally (the previous state is restored on exit), so the caller's
+random-number stream is left unchanged; \code{NULL} uses the current
+stream.
+}}
 
 \item{penalty, lambda0, lambda1, lambda2, v1, doubly, rho, a, b, maxitr.em, tol.em, maxitr.jgl, tol.jgl, truncate, normalize, c, impute}{Arguments passed to \code{\link{ssjgl}}.}
 
-\item{verbose}{Logical. If TRUE, prints bootstrap progress. Default TRUE.}
+\item{verbose}{Logical. If TRUE, reports bootstrap progress with
+\code{message()}. Default FALSE.}
 }
 \value{
 A list with elements:

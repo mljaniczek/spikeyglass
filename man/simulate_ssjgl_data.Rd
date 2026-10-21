@@ -37,7 +37,9 @@ in groups 2, ..., K relative to group 1. Default 0.05.}
 \item{signal}{Numeric signal strength for off-diagonal entries of the
 precision matrix. Default 0.3.}
 
-\item{seed}{Integer random seed for reproducibility. Default \code{NULL}.}
+\item{seed}{Integer random seed for reproducibility, used locally
+(the previous state is restored on exit) so the caller's random-number stream is left
+unchanged. Default \code{NULL} uses the current stream.}
 }
 \value{
 A list with elements:

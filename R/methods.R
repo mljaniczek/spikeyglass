@@ -218,3 +218,71 @@ plot.ssjgl <- function(x, v0_index = NULL, threshold = 0.5,
 
   invisible(pcor_list)
 }
+
+
+#' Shared-format accessors for ssjgl fits
+#'
+#' Methods for the \pkg{ggmtools} generics [ggmtools::pip_table()] and
+#' [ggmtools::pcor_estimate()], so that downstream code written for those
+#' generics works on \code{ssjgl} fits as well as on fits from other
+#' packages (e.g. \pkg{multiGGMr}).
+#'
+#' In SSJGL the edge indicator \eqn{\delta_{jk}} is shared by all groups, so
+#' \code{pip_table()} gives every group the same \code{pip} (P(delta = 1)).
+#' \code{pcor_estimate()} returns the MAP partial correlations (the EM
+#' estimate), not a posterior mean.
+#'
+#' @param fit An \code{ssjgl} object.
+#' @param v0_index Ladder step. Default: the last step.
+#' @param ... Ignored.
+#'
+#' @return \code{pip_table()}: a data frame with columns \code{i}, \code{j},
+#'   \code{node1}, \code{node2}, \code{group}, \code{pip}.
+#'   \code{pcor_estimate()}: a named list of K partial-correlation matrices.
+#'
+#' @name ssjgl-accessors
+#' @examples
+#' sim <- simulate_ssjgl_data(K = 2, p = 6, n = 50, seed = 1)
+#' fit <- ssjgl(sim$data_list, lambda0 = 1, lambda1 = 1, lambda2 = 1,
+#'              standardize = TRUE, maxitr.em = 20, impute = FALSE)
+#' head(pip_table(fit))
+#' pcor_estimate(fit)[[1]][1:3, 1:3]
+NULL
+
+#' @rdname ssjgl-accessors
+#' @export
+pip_table.ssjgl <- function(fit, v0_index = NULL, ...) {
+  if (is.null(v0_index)) v0_index <- length(fit$thetalist)
+  K <- length(fit$thetalist[[v0_index]])
+  pr <- fit$problist1[[v0_index]]
+  ggmtools::as_pip_table(rep(list(pr), K), varnames = .fit_varnames(fit),
+                         groupnames = .fit_groupnames(fit, K))
+}
+
+#' @rdname ssjgl-accessors
+#' @export
+pcor_estimate.ssjgl <- function(fit, v0_index = NULL, ...) {
+  if (is.null(v0_index)) v0_index <- length(fit$thetalist)
+  th <- fit$thetalist[[v0_index]]
+  vn <- .fit_varnames(fit)
+  out <- lapply(th, function(m) {
+    pc <- precision_to_pcor(m)
+    dimnames(pc) <- list(vn, vn)
+    pc
+  })
+  names(out) <- .fit_groupnames(fit, length(th))
+  out
+}
+
+.fit_varnames <- function(fit) {
+  fit$varnames %||% rownames(fit$thetalist[[1]][[1]]) %||%
+    paste0("V", seq_len(nrow(fit$thetalist[[1]][[1]])))
+}
+
+.fit_groupnames <- function(fit, K) {
+  g <- fit$groupnames
+  if (is.null(g) || length(g) != K) g <- paste0("Group_", seq_len(K))
+  g
+}
+
+`%||%` <- function(x, y) if (is.null(x)) y else x

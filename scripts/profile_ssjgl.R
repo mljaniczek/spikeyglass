@@ -1,10 +1,10 @@
 # Profiling script for spikeyglass
 #
 # Usage:
-#   Rscript inst/profiling/profile_ssjgl.R
+#   Rscript scripts/profile_ssjgl.R
 #
 # Or interactively with profvis:
-#   source("inst/profiling/profile_ssjgl.R")
+#   source("scripts/profile_ssjgl.R")
 
 library(spikeyglass)
 

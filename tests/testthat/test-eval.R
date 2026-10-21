@@ -33,10 +33,10 @@ test_that("roc_auc returns valid AUC", {
   roc <- roc_auc(score, truth)
 
   expect_type(roc, "list")
-  expect_true(roc$AUC >= 0 && roc$AUC <= 1)
+  expect_true(roc$auc >= 0 && roc$auc <= 1)
   expect_true(length(roc$FPR) == length(roc$TPR))
   # Perfect or near-perfect separation should give high AUC
-  expect_true(roc$AUC > 0.5)
+  expect_true(roc$auc > 0.5)
 })
 
 test_that("roc_auc handles edge cases", {
@@ -45,7 +45,7 @@ test_that("roc_auc handles edge cases", {
   truth <- matrix(c(0, 1, 1, 0), 2, 2)
   roc <- roc_auc(score, truth)
   # Only 1 edge in upper tri, no negatives
-  expect_true(is.na(roc$AUC))
+  expect_true(is.na(roc$auc))
 })
 
 test_that("compute_metrics works end to end", {
@@ -78,4 +78,36 @@ test_that("compute_metrics works end to end", {
     expect_true(g$TP + g$FP + g$TN + g$FN > 0)
     expect_true(is.finite(g$frobenius_norm))
   }
+})
+
+test_that("shared functions are the ggmtools objects", {
+  expect_identical(roc_auc, ggmtools::roc_auc)
+  expect_identical(precision_to_pcor, ggmtools::precision_to_pcor)
+  expect_identical(confusion_at_threshold, ggmtools::confusion_at_threshold)
+  expect_identical(plot_roc, ggmtools::plot_roc)
+})
+
+test_that("pip_table() and pcor_estimate() methods for ssjgl", {
+  sim <- simulate_ssjgl_data(K = 2, p = 5, n = 40, seed = 3)
+  Y <- setNames(lapply(sim$data_list, function(m) { colnames(m) <- letters[1:5]; m }),
+                c("ctrl", "case"))
+  fit <- NULL
+  utils::capture.output(fit <- suppressMessages(ssjgl(
+    Y, lambda0 = 1, lambda1 = 1, lambda2 = 1, standardize = TRUE,
+    maxitr.em = 20, impute = FALSE)))
+  pt <- pip_table(fit)
+  expect_named(pt, c("i", "j", "node1", "node2", "group", "pip"))
+  expect_equal(nrow(pt), 2 * 10)
+  expect_equal(unique(pt$group), c("ctrl", "case"))
+  pr <- fit$problist1[[3]]
+  expect_equal(pt$pip[pt$group == "ctrl"], unname(pr[upper.tri(pr)]))
+  expect_equal(pt$pip[pt$group == "case"], pt$pip[pt$group == "ctrl"])
+  expect_equal(pt$node1[1:3], c("a", "a", "b"))
+  pc <- pcor_estimate(fit)
+  expect_named(pc, c("ctrl", "case"))
+  expect_equal(pc$case, precision_to_pcor(fit$thetalist[[3]]$case))
+  expect_equal(pip_table(fit, v0_index = 1)$pip[1:10],
+               unname(fit$problist1[[1]][upper.tri(pr)]))
+  fit$groupnames <- NULL
+  expect_named(pcor_estimate(fit), c("Group_1", "Group_2"))
 })

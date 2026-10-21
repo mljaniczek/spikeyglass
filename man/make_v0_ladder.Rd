@@ -2,69 +2,71 @@
 % Please edit documentation in R/helpers.R
 \name{make_v0_ladder}
 \alias{make_v0_ladder}
-\title{Generate a v0 ladder for exploring sparsity levels}
+\title{Generate a v0 ladder}
 \usage{
 make_v0_ladder(
   lambda1,
-  n_steps = 10,
-  min_ratio = 5,
-  max_ratio = 500,
+  n_steps = 3,
+  min_ratio = 10,
+  max_ratio = 100,
   start_sparse = TRUE
 )
 }
 \arguments{
-\item{lambda1}{Numeric scalar; the off-diagonal penalty used in
-\code{\link{ssjgl}}. The v0 ladder is scaled to this value.}
+\item{lambda1}{Positive scalar; the off-diagonal penalty used in
+\code{\link{ssjgl}}. The ladder is scaled to this value.}
 
-\item{n_steps}{Integer number of v0 values in the ladder. Default 10.}
+\item{n_steps}{Integer number of v0 values in the ladder. Default 3.}
 
-\item{min_ratio}{Numeric minimum effective penalty ratio
-\code{lambda1/v0} at the first (densest) step. Default 5.}
+\item{min_ratio}{Ratio \code{lambda1/v0} at the first (weakest-spike,
+densest) step. Default 10.}
 
-\item{max_ratio}{Numeric maximum effective penalty ratio
-\code{lambda1/v0} at the last (sparsest) step. Default 500.}
+\item{max_ratio}{Ratio \code{lambda1/v0} at the last (strongest-spike,
+sparsest) step. Default 100.}
 
-\item{start_sparse}{Logical. If \code{TRUE} (default), the first v0 is
-the largest (weakest penalty) and the sequence is decreasing, which is
-the correct direction for warm-starting. If \code{FALSE}, returns an
-increasing sequence.}
+\item{start_sparse}{Logical. If \code{TRUE} (default), the sequence is
+decreasing in v0 (increasing in \code{lambda1/v0}), which is the
+direction the warm starts of the dynamic posterior exploration need. If
+\code{FALSE}, returns an increasing sequence.}
 }
 \value{
-A numeric vector of length \code{n_steps} with v0 values,
-decreasing by default.
+A numeric vector of \code{n_steps} v0 values, decreasing by
+default.
 }
 \description{
-Creates a decreasing sequence of spike variance values (\code{v0}) for use
-with \code{\link{ssjgl}}. This is primarily useful for \strong{exploring}
-how sparsity changes across v0 values, for diagnostics, or for replicating
-the full dynamic posterior exploration strategy of Li et al. (2019).
+Creates a decreasing sequence of spike variances \code{v0} for
+\code{\link{ssjgl}}, log-spaced in the ratio \code{lambda1/v0}. With the
+defaults it returns the ladder that \code{ssjgl()} uses when \code{v0s} is
+not given: three steps from \code{lambda1/v0 = 10} to \code{100}, i.e.
+\code{lambda1 / c(10, 31.6, 100)}.
 }
 \details{
-For routine use, a short ladder like \code{v0s = c(0.1, 0.03, 0.01)} is
-recommended (see \code{\link{ssjgl}} defaults and
-\code{vignette("parameter-exploration")} for details).
+In SSJGL the spike and slab are \emph{Laplace} priors on each off-diagonal
+precision entry \eqn{\omega_{jk}}, with rates \code{lambda1/v0} (spike)
+and \code{lambda1/v1} (slab); the spike's scale is \code{v0/lambda1}. So
+\code{v0} only matters through \code{lambda1/v0}, and this function is
+parameterised by that ratio. (\code{sqrt(v0)} is not a standard deviation
+of anything in the model.)
 
-The effective penalty for edge sparsity is \code{lambda1/v0}. This
-function creates a log-spaced ladder of v0 values such that the
-effective penalty ranges from \code{min_ratio} to \code{max_ratio}.
-Log-spacing concentrates more steps in the sparse (small v0) end
-where the model is most sensitive.
+Along the ladder, the spike penalty on a non-edge grows from
+\code{lambda1 * min_ratio} to \code{lambda1 * max_ratio}. In the M-step it
+soft-thresholds sample covariances (sample correlations, for standardised
+data) at roughly \code{lambda1/(n v0)}, for group sample size \code{n}.
 
-\strong{Interpreting v0}: The spike standard deviation \code{sqrt(v0)} sets the
-scale below which partial correlations are treated as noise. For normalized
-data where partial correlations live in \link{-1, 1}:
-\itemize{
-\item \code{v0 = 0.1} (spike SD = 0.32): weak sparsity, broad spike
-\item \code{v0 = 0.01} (spike SD = 0.10): moderate sparsity, good default
-\item \code{v0 = 0.001} (spike SD = 0.03): aggressive sparsity
-\item \code{v0 = 0.0001} (spike SD = 0.01): very aggressive, may over-sparsify
-}
+The default end point \code{lambda1/v0 = 100} was chosen by a simulation
+study (see \code{vignette("parameter-exploration")}): by that point the
+solution path has stabilised and F1 at PIP > 0.5 has reached its plateau,
+while longer ladders (up to 500) took longer and gave no better graphs.
+For exploring the whole path, use e.g. \code{n_steps = 10, min_ratio = 5,
+max_ratio = 500} with \code{\link{plot_stability}} and
+\code{\link{plot_path}}.
 }
 \examples{
-# Exploration ladder for lambda1 = 0.5
-v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 10)
-data.frame(v0 = v0s, spike_sd = sqrt(v0s),
-           eff_penalty = 0.5 / v0s)
+# Default ladder (what ssjgl() uses) for lambda1 = 1
+make_v0_ladder(lambda1 = 1)
+# A longer exploration ladder
+v0s <- make_v0_ladder(lambda1 = 1, n_steps = 10, min_ratio = 5, max_ratio = 500)
+data.frame(v0 = v0s, ratio = 1 / v0s, spike_scale = v0s / 1)
 }
 \seealso{
 \code{\link[=ssjgl]{ssjgl()}}, \code{\link[=plot_stability]{plot_stability()}}

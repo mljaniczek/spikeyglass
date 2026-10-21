@@ -48,3 +48,5 @@ src/*.dll
 
 # Test artifacts
 tests/testthat/Rplots.pdf
+data-raw/v0-ladder-study-cache/
+bench-cache/

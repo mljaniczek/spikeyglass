@@ -99,8 +99,25 @@ test_that("negloglik_Gaussian returns Inf for non-PD input", {
   expect_equal(nll, Inf)
 })
 
+test_that("make_v0_ladder default is the 3-step ladder lambda1/v0 = 10..100", {
+  expect_equal(make_v0_ladder(lambda1 = 1), 1 / c(10, sqrt(10) * 10, 100))
+  expect_equal(make_v0_ladder(lambda1 = 0.5), 0.5 / c(10, sqrt(10) * 10, 100))
+  expect_equal(make_v0_ladder(lambda1 = 2, n_steps = 1), 2 / 100)
+})
+
+test_that("ssjgl() uses make_v0_ladder(lambda1) when v0s is not given", {
+  skip_on_cran()
+  sim <- simulate_ssjgl_data(K = 2, p = 5, n = 30, graph_type = "band", seed = 1)
+  fit <- suppressMessages(ssjgl(sim$data_list, lambda0 = 1, lambda1 = 0.5,
+                                lambda2 = 0.5, maxitr.em = 10, impute = FALSE))
+  expect_equal(fit$v0s, make_v0_ladder(0.5))
+  expect_length(fit$thetalist, 3)
+  expect_error(ssjgl(sim$data_list, lambda0 = 1, lambda1 = 0, lambda2 = 0.5,
+                     impute = FALSE), "supply v0s")
+})
+
 test_that("make_v0_ladder produces correct output", {
-  v0s <- make_v0_ladder(lambda1 = 1, n_steps = 10)
+  v0s <- make_v0_ladder(lambda1 = 1, n_steps = 10, min_ratio = 5, max_ratio = 500)
 
   expect_length(v0s, 10)
   # Should be decreasing by default
@@ -136,7 +153,8 @@ test_that("make_v0_ladder start_sparse argument works", {
 
 test_that("make_v0_ladder validates inputs", {
   expect_error(make_v0_ladder(lambda1 = -1))
-  expect_error(make_v0_ladder(lambda1 = 1, n_steps = 1))
+  expect_error(make_v0_ladder(lambda1 = 1, n_steps = 0))
+  expect_error(make_v0_ladder(lambda1 = c(1, 2)))
   expect_error(make_v0_ladder(lambda1 = 1, min_ratio = 0))
   expect_error(make_v0_ladder(lambda1 = 1, max_ratio = 3, min_ratio = 5))
 })
@@ -155,7 +173,7 @@ test_that("plot_stability runs without error", {
     impute = FALSE
   ))
 
-  result <- plot_stability(fit, v0s)
+  result <- plot_stability(fit)
 
   expect_type(result, "list")
   expect_equal(nrow(result$edge_counts), 3)

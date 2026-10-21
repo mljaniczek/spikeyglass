@@ -21,7 +21,9 @@
 #'   in groups 2, ..., K relative to group 1. Default 0.05.
 #' @param signal Numeric signal strength for off-diagonal entries of the
 #'   precision matrix. Default 0.3.
-#' @param seed Integer random seed for reproducibility. Default \code{NULL}.
+#' @param seed Integer random seed for reproducibility, used locally
+#'   (the previous state is restored on exit) so the caller's random-number stream is left
+#'   unchanged. Default \code{NULL} uses the current stream.
 #'
 #' @return A list with elements:
 #'   \describe{
@@ -46,7 +48,10 @@ simulate_ssjgl_data <- function(K = 2, p = 20, n = 100,
                                 signal = 0.3,
                                 seed = NULL) {
   graph_type <- match.arg(graph_type)
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) {
+    restore_rng <- .set_seed_restorable(seed)
+    on.exit(restore_rng(), add = TRUE)
+  }
   if (length(n) == 1) n <- rep(n, K)
   stopifnot(length(n) == K)
 
@@ -161,4 +166,23 @@ simulate_ssjgl_data <- function(K = 2, p = 20, n = 100,
   }
 
   Omega
+}
+
+
+# Sets the RNG seed and returns a function that restores the previous RNG
+# state (or removes .Random.seed if there was none). Used with
+# on.exit(restore(), add = TRUE) so that seeded functions leave the caller's
+# random-number stream unchanged.
+.set_seed_restorable <- function(seed) {
+  genv <- globalenv()
+  had_seed <- exists(".Random.seed", envir = genv, inherits = FALSE)
+  old_seed <- if (had_seed) get(".Random.seed", envir = genv, inherits = FALSE)
+  set.seed(seed)
+  function() {
+    if (had_seed) {
+      assign(".Random.seed", old_seed, envir = genv)
+    } else if (exists(".Random.seed", envir = genv, inherits = FALSE)) {
+      rm(".Random.seed", envir = genv)
+    }
+  }
 }

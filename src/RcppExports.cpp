@@ -31,6 +31,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// flsa_general_cpp
+List flsa_general_cpp(List A_list, double rho, arma::mat lam1, arma::mat lam2);
+RcppExport SEXP _spikeyglass_flsa_general_cpp(SEXP A_listSEXP, SEXP rhoSEXP, SEXP lam1SEXP, SEXP lam2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type A_list(A_listSEXP);
+    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type lam1(lam1SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type lam2(lam2SEXP);
+    rcpp_result_gen = Rcpp::wrap(flsa_general_cpp(A_list, rho, lam1, lam2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// connected_components_cpp
+IntegerVector connected_components_cpp(LogicalMatrix adj);
+RcppExport SEXP _spikeyglass_connected_components_cpp(SEXP adjSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< LogicalMatrix >::type adj(adjSEXP);
+    rcpp_result_gen = Rcpp::wrap(connected_components_cpp(adj));
+    return rcpp_result_gen;
+END_RCPP
+}
 // ssjgl_em_inner_cpp
 List ssjgl_em_inner_cpp(List S_list, Nullable<List> addvar_list, NumericVector n_vec, List theta_init, std::string penalty, double lambda0, double lambda1, double lambda2, double v0, double v1, bool doubly, double rho, double a, double b, int maxitr_em, double tol_em, int maxitr_jgl, double tol_jgl, double truncate);
 RcppExport SEXP _spikeyglass_ssjgl_em_inner_cpp(SEXP S_listSEXP, SEXP addvar_listSEXP, SEXP n_vecSEXP, SEXP theta_initSEXP, SEXP penaltySEXP, SEXP lambda0SEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP v0SEXP, SEXP v1SEXP, SEXP doublySEXP, SEXP rhoSEXP, SEXP aSEXP, SEXP bSEXP, SEXP maxitr_emSEXP, SEXP tol_emSEXP, SEXP maxitr_jglSEXP, SEXP tol_jglSEXP, SEXP truncateSEXP) {
@@ -63,6 +88,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_spikeyglass_admm_iters_adaptive_cpp", (DL_FUNC) &_spikeyglass_admm_iters_adaptive_cpp, 10},
+    {"_spikeyglass_flsa_general_cpp", (DL_FUNC) &_spikeyglass_flsa_general_cpp, 4},
+    {"_spikeyglass_connected_components_cpp", (DL_FUNC) &_spikeyglass_connected_components_cpp, 1},
     {"_spikeyglass_ssjgl_em_inner_cpp", (DL_FUNC) &_spikeyglass_ssjgl_em_inner_cpp, 19},
     {NULL, NULL, 0}
 };

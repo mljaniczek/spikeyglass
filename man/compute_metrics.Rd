@@ -38,6 +38,10 @@ Given an ssjgl fit object and the true adjacency/precision matrices,
 computes edge-level metrics (TPR, FPR, AUC) and estimation error
 (Frobenius norm, KL divergence).
 }
+\details{
+The edge indicator in SSJGL is shared by all groups, so every group is
+scored with the same PIP matrix (against its own true graph).
+}
 \examples{
 sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
 fit <- ssjgl(sim$data_list, penalty = "fused",

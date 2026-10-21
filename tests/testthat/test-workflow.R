@@ -48,7 +48,7 @@ test_that("SSJGL_final_with_pcor_CI produces valid CIs", {
     # Lower <= upper everywhere
     expect_true(all(boot_res$CI_lower[[k]] <= boot_res$CI_upper[[k]], na.rm = TRUE))
     # Diagonal of pcor should be 1
-    expect_equal(diag(boot_res$pcor_hat[[k]]), rep(1, 5))
+    expect_equal(unname(diag(boot_res$pcor_hat[[k]])), rep(1, 5))
   }
 })
 

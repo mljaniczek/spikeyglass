@@ -20,13 +20,14 @@ plot_path(
 )
 }
 \arguments{
-\item{v0s}{list of v0 input}
+\item{v0s}{The v0 values of the fit (\code{obj$v0s}).}
 
-\item{obj}{object created using ssjgl}
+\item{obj}{An \code{ssjgl} object.}
 
-\item{thres}{default threshold for probability of edge inclusion}
+\item{thres}{PIP threshold. Default 0.5.}
 
-\item{normalize}{True or False (default False) on if normalized covariance should be returned}
+\item{normalize}{Logical. If \code{TRUE}, plot partial correlations
+instead of precision entries. Default \code{FALSE}.}
 
 \item{xlab}{String for xlab. Default empty.}
 
@@ -34,13 +35,16 @@ plot_path(
 
 \item{main}{string for main title. Default empty.}
 
-\item{par}{default c(1,2) to list layout of output plots}
+\item{par}{Layout \code{c(rows, cols)} for the K panels, passed to
+\code{par(mfrow = )} and restored on exit. Default \code{c(1, 2)};
+\code{NULL} leaves the layout alone.}
 
 \item{ylim}{default NULL and will calculate from range}
 
 \item{reverse}{Default FALSE. If want to reverse direction of plot.}
 
-\item{position}{Default "bottomright". For position of legend.}
+\item{position}{Legend position, or \code{"none"}. Default
+\code{"bottomright"}.}
 
 \item{...}{other parameters passed in to base plot}
 }
@@ -48,17 +52,16 @@ plot_path(
 Invisible NULL. Called for side effect (plot).
 }
 \description{
-Plots the solution paths from ssjgl().
+Plots each off-diagonal precision entry (or, with \code{normalize = TRUE},
+partial correlation) against v0 along the ladder, one panel per group.
+Entries whose PIP is below \code{thres} at a step are drawn as 0.
 }
 \examples{
-\dontrun{
-sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
-v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 5)
-fit <- ssjgl(sim$data_list, penalty = "fused",
-             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
-             v0s = v0s, maxitr.em = 50, impute = FALSE)
-plot_path(v0s, fit, thres = 0.5,
+sim <- simulate_ssjgl_data(K = 2, p = 8, n = 100, seed = 42)
+fit <- ssjgl(sim$data_list, lambda0 = 1, lambda1 = 1, lambda2 = 1,
+             v0s = make_v0_ladder(1, n_steps = 5, min_ratio = 5, max_ratio = 200),
+             standardize = TRUE, maxitr.em = 50, impute = FALSE)
+plot_path(fit$v0s, fit, thres = 0.5,
           xlab = expression(v[0]), ylab = "Precision entries",
           main = c("Group 1", "Group 2"))
-}
 }
