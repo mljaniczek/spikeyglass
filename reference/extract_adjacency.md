@@ -36,5 +36,5 @@ fit <- ssjgl(sim$data_list, penalty = "fused",
              v0s = 0.01, maxitr.em = 10, impute = FALSE)
 adj <- extract_adjacency(fit, threshold = 0.5)
 sum(adj[[1]][upper.tri(adj[[1]])])  # edge count
-#> [1] 24
+#> [1] 26
 ```

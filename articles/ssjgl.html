@@ -220,11 +220,11 @@ used:</p>
 <span><span class="co">#&gt;   Groups (K): 2</span></span>
 <span><span class="co">#&gt;   Variables (p): 15</span></span>
 <span><span class="co">#&gt;   v0 ladder steps: 3</span></span>
-<span><span class="co">#&gt;   Total EM iterations: 40</span></span>
-<span><span class="co">#&gt;   Total time: 1.0 seconds</span></span>
-<span><span class="co">#&gt;   Group 1: 34 non-zero edges (from precision)</span></span>
-<span><span class="co">#&gt;   Group 2: 35 non-zero edges (from precision)</span></span>
-<span><span class="co">#&gt;   Edges with P(inclusion) &gt; 0.5: 35</span></span></code></pre></div>
+<span><span class="co">#&gt;   Total EM iterations: 37</span></span>
+<span><span class="co">#&gt;   Total time: 0.8 seconds</span></span>
+<span><span class="co">#&gt;   Group 1: 30 non-zero edges (from precision)</span></span>
+<span><span class="co">#&gt;   Group 2: 31 non-zero edges (from precision)</span></span>
+<span><span class="co">#&gt;   Edges with P(inclusion) &gt; 0.5: 32</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="extract-results">Extract results<a class="anchor" aria-label="anchor" href="#extract-results"></a>
@@ -244,10 +244,10 @@ used:</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Estimated edges (Group 1):"</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">adj_hat</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/lower.tri.html" class="external-link">upper.tri</a></span><span class="op">(</span><span class="va">adj_hat</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Estimated edges (Group 1): 35</span></span>
+<span><span class="co">#&gt; Estimated edges (Group 1): 32</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Estimated edges (Group 2):"</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">adj_hat</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/lower.tri.html" class="external-link">upper.tri</a></span><span class="op">(</span><span class="va">adj_hat</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Estimated edges (Group 2): 35</span></span></code></pre></div>
+<span><span class="co">#&gt; Estimated edges (Group 2): 32</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="evaluate-performance">Evaluate performance<a class="anchor" aria-label="anchor" href="#evaluate-performance"></a>
@@ -265,11 +265,11 @@ AUC:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"=== Overall Performance ===\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; === Overall Performance ===</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Mean TPR: %.3f\n"</span>, <span class="va">metrics</span><span class="op">$</span><span class="va">overall</span><span class="op">$</span><span class="va">mean_TPR</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Mean TPR: 0.984</span></span>
+<span><span class="co">#&gt; Mean TPR: 0.931</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Mean FPR: %.3f\n"</span>, <span class="va">metrics</span><span class="op">$</span><span class="va">overall</span><span class="op">$</span><span class="va">mean_FPR</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Mean FPR: 0.085</span></span>
+<span><span class="co">#&gt; Mean FPR: 0.065</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Mean AUC: %.3f\n"</span>, <span class="va">metrics</span><span class="op">$</span><span class="va">overall</span><span class="op">$</span><span class="va">mean_AUC</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Mean AUC: 0.944</span></span>
+<span><span class="co">#&gt; Mean AUC: 0.934</span></span>
 <span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">k</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"\n--- Group %d ---\n"</span>, <span class="va">k</span><span class="op">)</span><span class="op">)</span></span>
@@ -280,14 +280,14 @@ AUC:</p>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- Group 1 ---</span></span>
-<span><span class="co">#&gt;   TP=27, FP=8, TN=70, FN=0</span></span>
-<span><span class="co">#&gt;   TPR=1.000, FPR=0.103, F1=0.871</span></span>
-<span><span class="co">#&gt;   Frobenius norm: 2.382</span></span>
+<span><span class="co">#&gt;   TP=25, FP=7, TN=71, FN=2</span></span>
+<span><span class="co">#&gt;   TPR=0.926, FPR=0.090, F1=0.847</span></span>
+<span><span class="co">#&gt;   Frobenius norm: 2.240</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- Group 2 ---</span></span>
-<span><span class="co">#&gt;   TP=30, FP=5, TN=69, FN=1</span></span>
-<span><span class="co">#&gt;   TPR=0.968, FPR=0.068, F1=0.909</span></span>
-<span><span class="co">#&gt;   Frobenius norm: 4.719</span></span></code></pre></div>
+<span><span class="co">#&gt;   TP=29, FP=3, TN=71, FN=2</span></span>
+<span><span class="co">#&gt;   TPR=0.935, FPR=0.041, F1=0.921</span></span>
+<span><span class="co">#&gt;   Frobenius norm: 4.708</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="roc-curve">ROC curve<a class="anchor" aria-label="anchor" href="#roc-curve"></a>
 </h3>
@@ -319,18 +319,18 @@ Results depend only on <code><a href="https://rdrr.io/r/base/Random.html" class=
 <span><span class="va">de</span></span>
 <span><span class="co">#&gt; &lt;ssjgl_diff_edges&gt;</span></span>
 <span><span class="co">#&gt;   group 1 vs group 2, pcor scale, permutation (B = 20), v0 step 3</span></span>
-<span><span class="co">#&gt;   16 of 105 edges selected at BH-adjusted p &lt; 0.05</span></span>
-<span><span class="co">#&gt;   i  j node1 node2 est_g1 est_g2   diff   pvalue   p_adj selected</span></span>
-<span><span class="co">#&gt;   4  5    V4    V5  0.347 -0.331  0.677 0.000476 0.00555     TRUE</span></span>
-<span><span class="co">#&gt;  12 13   V12   V13 -0.261  0.359 -0.620 0.000476 0.00555     TRUE</span></span>
-<span><span class="co">#&gt;   9 11    V9   V11 -0.333  0.162 -0.495 0.000476 0.00555     TRUE</span></span>
-<span><span class="co">#&gt;   3  4    V3    V4  0.208 -0.269  0.478 0.000476 0.00555     TRUE</span></span>
-<span><span class="co">#&gt;  11 12   V11   V12  0.134 -0.337  0.472 0.000476 0.00555     TRUE</span></span>
-<span><span class="co">#&gt;   9 10    V9   V10 -0.252  0.158 -0.410 0.000476 0.00555     TRUE</span></span>
-<span><span class="co">#&gt;  10 12   V10   V12 -0.268  0.134 -0.402 0.000476 0.00555     TRUE</span></span>
-<span><span class="co">#&gt;  11 13   V11   V13  0.246 -0.145  0.391 0.000476 0.00555     TRUE</span></span>
-<span><span class="co">#&gt;  14 15   V14   V15 -0.181  0.182 -0.363 0.000476 0.00555     TRUE</span></span>
-<span><span class="co">#&gt;   3 11    V3   V11  0.000  0.290 -0.290 0.000952 0.01000     TRUE</span></span>
+<span><span class="co">#&gt;   12 of 105 edges selected at BH-adjusted p &lt; 0.05</span></span>
+<span><span class="co">#&gt;   i  j node1 node2   est_g1 est_g2   diff   pvalue   p_adj selected</span></span>
+<span><span class="co">#&gt;   4  5    V4    V5  0.29123 -0.328  0.619 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   3  4    V3    V4  0.29342 -0.314  0.607 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   9 10    V9   V10 -0.37791  0.207 -0.585 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;  11 13   V11   V13  0.18953 -0.379  0.568 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;  12 13   V12   V13 -0.24371  0.305 -0.549 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   9 11    V9   V11 -0.23151  0.279 -0.510 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;  14 15   V14   V15 -0.17495  0.235 -0.410 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   3 13    V3   V13 -0.02633  0.328 -0.354 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   7  9    V7    V9  0.35160  0.000  0.352 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   3 11    V3   V11  0.00814  0.299 -0.290 0.002380 0.02499     TRUE</span></span>
 <span><span class="co">#&gt;  prob_dissimilar</span></span>
 <span><span class="co">#&gt;                1</span></span>
 <span><span class="co">#&gt;                1</span></span>
@@ -342,7 +342,7 @@ Results depend only on <code><a href="https://rdrr.io/r/base/Random.html" class=
 <span><span class="co">#&gt;                1</span></span>
 <span><span class="co">#&gt;                1</span></span>
 <span><span class="co">#&gt;                1</span></span>
-<span><span class="co">#&gt;   ... and 6 more</span></span></code></pre></div>
+<span><span class="co">#&gt;   ... and 2 more</span></span></code></pre></div>
 <p>The result is a data frame with one row per edge (<code>i</code>,
 <code>j</code>, <code>node1</code>, <code>node2</code>,
 <code>est_g1</code>, <code>est_g2</code>, <code>diff</code>,

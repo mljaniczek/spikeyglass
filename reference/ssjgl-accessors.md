@@ -55,15 +55,15 @@ fit <- ssjgl(sim$data_list, lambda0 = 1, lambda1 = 1, lambda2 = 1,
              standardize = TRUE, maxitr.em = 20, impute = FALSE)
 head(pip_table(fit))
 #>   i j node1 node2   group          pip
-#> 1 1 2    V1    V2 Group_1 5.000012e-07
-#> 2 1 3    V1    V3 Group_1 5.000012e-07
+#> 1 1 2    V1    V2 Group_1 8.750011e-07
+#> 2 1 3    V1    V3 Group_1 8.750011e-07
 #> 3 2 3    V2    V3 Group_1 1.000000e+00
-#> 4 1 4    V1    V4 Group_1 5.000012e-07
-#> 5 2 4    V2    V4 Group_1 5.000012e-07
+#> 4 1 4    V1    V4 Group_1 8.750011e-07
+#> 5 2 4    V2    V4 Group_1 1.000000e+00
 #> 6 3 4    V3    V4 Group_1 1.000000e+00
 pcor_estimate(fit)[[1]][1:3, 1:3]
-#>    V1         V2         V3
-#> V1  1  0.0000000  0.0000000
-#> V2  0  1.0000000 -0.3412387
-#> V3  0 -0.3412387  1.0000000
+#>    V1        V2        V3
+#> V1  1  0.000000  0.000000
+#> V2  0  1.000000 -0.191912
+#> V3  0 -0.191912  1.000000
 ```

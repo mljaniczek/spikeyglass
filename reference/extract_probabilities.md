@@ -41,5 +41,5 @@ fit <- ssjgl(sim$data_list, penalty = "fused",
 probs <- extract_probabilities(fit)
 # Edges with > 50% inclusion probability
 sum(probs$prob1[upper.tri(probs$prob1)] > 0.5)
-#> [1] 24
+#> [1] 26
 ```

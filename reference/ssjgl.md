@@ -23,6 +23,7 @@ ssjgl(
   b = 1,
   maxitr.em = 500,
   tol.em = 1e-04,
+  tol.pi = 0.001,
   maxitr.jgl = 500,
   tol.jgl = 1e-05,
   truncate = 1e-05,
@@ -30,6 +31,7 @@ ssjgl(
   c = 0.1,
   impute = TRUE,
   standardize = FALSE,
+  carry_pi = FALSE,
   verbose = FALSE
 )
 ```
@@ -126,7 +128,15 @@ ssjgl(
 
 - tol.em:
 
-  Numeric EM convergence tolerance. Default 1e-4.
+  Numeric EM convergence tolerance for the largest absolute change in
+  any precision entry. Default 1e-4.
+
+- tol.pi:
+
+  Numeric EM convergence tolerance for the change in `log(pi_delta)`
+  (and `log(pi_xi)` if `doubly`). A ladder step stops only when both
+  tolerances are met; checking theta alone could stop the EM while pi
+  was still collapsing. Default 1e-3 (a 0.1\\ relative change).
 
 - maxitr.jgl:
 
@@ -172,6 +182,12 @@ ssjgl(
   unless the variables are already on a common, meaningful scale.
   Default `FALSE` (for back-compatibility). Imputed values are returned
   on the original scale.
+
+- carry_pi:
+
+  Logical. If `TRUE`, pi_delta and pi_xi start each ladder step from
+  their values at the end of the previous step. If `FALSE` (default, as
+  in Li et al. 2019), they restart at the prior mean `a/(a+b)`.
 
 - verbose:
 
@@ -277,6 +293,29 @@ et al. (2019), iterating over a decreasing ladder of spike variances
 `v0s` (increasing spike penalty `lambda1/v0`) with warm-starting between
 steps.
 
+## Posterior inclusion probabilities
+
+`problist1` holds the E-step probabilities \\P(\delta\_{jk} = 1)\\ given
+the current estimates. They are conditional probabilities inside an EM
+(posterior-mode) algorithm, not calibrated posterior probabilities, so
+they should not be used for Bayesian FDR control. They do rank edges
+well, and PIP \> 0.5 is a reasonable selection rule with the default
+ladder.
+
+An edge reaches PIP 0.5 only if, roughly, \\\sum_g
+\|\theta^{(g)}\_{jk}\| \> (G \log r - \mathrm{logit}\\\pi\_\delta) /
+(r - 1)\\, with \\r = \lambda_1 / v_0\\. If the ladder ends at a small
+\\r\\ (e.g. 16), this bar is above typical edge sizes; then
+\\\pi\_\delta\\ shrinks, which raises the bar again, and the PIPs
+collapse towards 0 even though they still rank edges. The default ladder
+ends at \\r = 100\\. `ssjgl()` warns when no edge has PIP \> 0.5 at the
+last step. \\\pi\\ is kept inside \\\[1/N, 1 - 1/N\]\\, where \\N =
+p(p-1)/2\\. See `data-raw/pip-collapse-diagnostic.md` in the package
+sources for the analysis.
+
+`problist2` (\\P(\xi\_{jk} = 1)\\, doubly only) is the most fragile
+output; treat it as a ranking.
+
 ## References
 
 Li, Z. R., McCormick, T. H., & Clark, S. J. (2019). Bayesian Joint
@@ -304,12 +343,12 @@ print(fit)
 #>   Groups (K): 2
 #>   Variables (p): 10
 #>   v0 ladder steps: 3
-#>   Total EM iterations: 24
-#>   Total time: 0.2 seconds
-#>   Group 1: 10 non-zero edges (from precision)
-#>   Group 2: 10 non-zero edges (from precision)
-#>   Edges with P(inclusion) > 0.5: 10
+#>   Total EM iterations: 42
+#>   Total time: 0.5 seconds
+#>   Group 1: 12 non-zero edges (from precision)
+#>   Group 2: 12 non-zero edges (from precision)
+#>   Edges with P(inclusion) > 0.5: 12
 adj <- extract_adjacency(fit, threshold = 0.5)
 sum(adj[[1]][upper.tri(adj[[1]])])  # estimated edge count
-#> [1] 10
+#> [1] 12
 ```

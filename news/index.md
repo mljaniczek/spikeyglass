@@ -2,6 +2,37 @@
 
 ## spikeyglass 0.1.0
 
+### PIP collapse (pi handling in the EM)
+
+A diagnostic of the PIP collapse seen in the DiNA simulation is in
+`data-raw/pip-collapse-diagnostic.md`. It was caused by ladders ending
+at a small `lambda1/v0` (e.g. 16): an edge needs roughly
+`sum_g |theta_g| > (G log r - logit(pi)) / (r - 1)`, `r = lambda1/v0`,
+to reach PIP 0.5. Below that bar the pi update shrinks pi, which raises
+the bar again. The following changes make the EM robust to this and make
+it visible:
+
+- pi_delta and pi_xi are kept inside `[1/N, 1 - 1/N]`, `N = p(p-1)/2`.
+  pi_xi could previously reach exactly 0 and stay there (`log(0)` in the
+  E-step), so `problist2` was identically 0.
+- EM convergence now also requires the change in `log(pi)` to be below
+  the new `tol.pi` (default 1e-3). Checking theta alone could stop a
+  ladder step while pi was still falling by orders of magnitude per
+  iteration.
+- [`ssjgl()`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md)
+  warns when the last ladder step has no edge with PIP \> 0.5 or
+  pi_delta is at its floor.
+- New `carry_pi = FALSE`. If `TRUE`, pi starts each ladder step from the
+  previous step’s value instead of the prior mean.
+- [`?ssjgl`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md)
+  gains a section on what the PIPs are (EM conditional probabilities
+  that rank edges, not calibrated posterior probabilities) and on the
+  collapse condition.
+
+For fits that did not collapse, the final estimates are unchanged (to
+1e-14 on the reference fits); some first ladder steps take one iteration
+more or fewer.
+
 ### CRAN preparation
 
 - [`ssjgl()`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md)

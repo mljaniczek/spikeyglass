@@ -137,11 +137,11 @@ print(fit)
 #>   Groups (K): 2
 #>   Variables (p): 15
 #>   v0 ladder steps: 3
-#>   Total EM iterations: 40
-#>   Total time: 1.0 seconds
-#>   Group 1: 34 non-zero edges (from precision)
-#>   Group 2: 35 non-zero edges (from precision)
-#>   Edges with P(inclusion) > 0.5: 35
+#>   Total EM iterations: 37
+#>   Total time: 0.8 seconds
+#>   Group 1: 30 non-zero edges (from precision)
+#>   Group 2: 31 non-zero edges (from precision)
+#>   Edges with P(inclusion) > 0.5: 32
 ```
 
 ## Extract results
@@ -162,10 +162,10 @@ adj_hat <- extract_adjacency(fit, threshold = 0.5)
 
 cat("Estimated edges (Group 1):",
     sum(adj_hat[[1]][upper.tri(adj_hat[[1]])]), "\n")
-#> Estimated edges (Group 1): 35
+#> Estimated edges (Group 1): 32
 cat("Estimated edges (Group 2):",
     sum(adj_hat[[2]][upper.tri(adj_hat[[2]])]), "\n")
-#> Estimated edges (Group 2): 35
+#> Estimated edges (Group 2): 32
 ```
 
 ## Evaluate performance
@@ -184,11 +184,11 @@ metrics <- compute_metrics(
 cat("=== Overall Performance ===\n")
 #> === Overall Performance ===
 cat(sprintf("Mean TPR: %.3f\n", metrics$overall$mean_TPR))
-#> Mean TPR: 0.984
+#> Mean TPR: 0.931
 cat(sprintf("Mean FPR: %.3f\n", metrics$overall$mean_FPR))
-#> Mean FPR: 0.085
+#> Mean FPR: 0.065
 cat(sprintf("Mean AUC: %.3f\n", metrics$overall$mean_AUC))
-#> Mean AUC: 0.944
+#> Mean AUC: 0.934
 
 for (k in 1:2) {
   cat(sprintf("\n--- Group %d ---\n", k))
@@ -199,14 +199,14 @@ for (k in 1:2) {
 }
 #> 
 #> --- Group 1 ---
-#>   TP=27, FP=8, TN=70, FN=0
-#>   TPR=1.000, FPR=0.103, F1=0.871
-#>   Frobenius norm: 2.382
+#>   TP=25, FP=7, TN=71, FN=2
+#>   TPR=0.926, FPR=0.090, F1=0.847
+#>   Frobenius norm: 2.240
 #> 
 #> --- Group 2 ---
-#>   TP=30, FP=5, TN=69, FN=1
-#>   TPR=0.968, FPR=0.068, F1=0.909
-#>   Frobenius norm: 4.719
+#>   TP=29, FP=3, TN=71, FN=2
+#>   TPR=0.935, FPR=0.041, F1=0.921
+#>   Frobenius norm: 4.708
 ```
 
 ### ROC curve
@@ -246,18 +246,18 @@ de <- diff_edges(fit, Y = sim$data_list, B = 20)
 de
 #> <ssjgl_diff_edges>
 #>   group 1 vs group 2, pcor scale, permutation (B = 20), v0 step 3
-#>   16 of 105 edges selected at BH-adjusted p < 0.05
-#>   i  j node1 node2 est_g1 est_g2   diff   pvalue   p_adj selected
-#>   4  5    V4    V5  0.347 -0.331  0.677 0.000476 0.00555     TRUE
-#>  12 13   V12   V13 -0.261  0.359 -0.620 0.000476 0.00555     TRUE
-#>   9 11    V9   V11 -0.333  0.162 -0.495 0.000476 0.00555     TRUE
-#>   3  4    V3    V4  0.208 -0.269  0.478 0.000476 0.00555     TRUE
-#>  11 12   V11   V12  0.134 -0.337  0.472 0.000476 0.00555     TRUE
-#>   9 10    V9   V10 -0.252  0.158 -0.410 0.000476 0.00555     TRUE
-#>  10 12   V10   V12 -0.268  0.134 -0.402 0.000476 0.00555     TRUE
-#>  11 13   V11   V13  0.246 -0.145  0.391 0.000476 0.00555     TRUE
-#>  14 15   V14   V15 -0.181  0.182 -0.363 0.000476 0.00555     TRUE
-#>   3 11    V3   V11  0.000  0.290 -0.290 0.000952 0.01000     TRUE
+#>   12 of 105 edges selected at BH-adjusted p < 0.05
+#>   i  j node1 node2   est_g1 est_g2   diff   pvalue   p_adj selected
+#>   4  5    V4    V5  0.29123 -0.328  0.619 0.000476 0.00555     TRUE
+#>   3  4    V3    V4  0.29342 -0.314  0.607 0.000476 0.00555     TRUE
+#>   9 10    V9   V10 -0.37791  0.207 -0.585 0.000476 0.00555     TRUE
+#>  11 13   V11   V13  0.18953 -0.379  0.568 0.000476 0.00555     TRUE
+#>  12 13   V12   V13 -0.24371  0.305 -0.549 0.000476 0.00555     TRUE
+#>   9 11    V9   V11 -0.23151  0.279 -0.510 0.000476 0.00555     TRUE
+#>  14 15   V14   V15 -0.17495  0.235 -0.410 0.000476 0.00555     TRUE
+#>   3 13    V3   V13 -0.02633  0.328 -0.354 0.000476 0.00555     TRUE
+#>   7  9    V7    V9  0.35160  0.000  0.352 0.000476 0.00555     TRUE
+#>   3 11    V3   V11  0.00814  0.299 -0.290 0.002380 0.02499     TRUE
 #>  prob_dissimilar
 #>                1
 #>                1
@@ -269,7 +269,7 @@ de
 #>                1
 #>                1
 #>                1
-#>   ... and 6 more
+#>   ... and 2 more
 ```
 
 The result is a data frame with one row per edge (`i`, `j`, `node1`,

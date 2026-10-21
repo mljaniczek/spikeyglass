@@ -27,7 +27,11 @@ ssjgl_em_inner_cpp(
   tol_em,
   maxitr_jgl,
   tol_jgl,
-  truncate
+  truncate,
+  pi_delta_init,
+  pi_xi_init,
+  pi_floor,
+  tol_pi
 )
 ```
 
@@ -108,6 +112,18 @@ ssjgl_em_inner_cpp(
 - truncate:
 
   Threshold for zeroing small entries
+
+- pi_delta_init, pi_xi_init:
+
+  Starting values of pi_delta and pi_xi
+
+- pi_floor:
+
+  pi is kept between pi_floor and 1 - pi_floor
+
+- tol_pi:
+
+  Convergence tolerance for the change in log(pi)
 
 ## Value
 

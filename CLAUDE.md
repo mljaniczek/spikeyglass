@@ -203,7 +203,16 @@ R CMD INSTALL .
     `meanj[cbind(missed[, 1], missed[, 3])]` for correct group-specific
     mean restoration.
 
-5.  **Correctness fixes (2026-10, see NEWS.md)**: lambda = 0 drops its
+5.  **PIP collapse / pi handling (2026-10)**: ladders ending at small
+    lambda1/v0 (e.g. DiNA’s 16) make PIPs collapse
+    (`data-raw/pip-collapse-diagnostic.md`). pi is now clamped to \[1/N,
+    1-1/N\], convergence also checks log(pi) (`tol.pi`),
+    [`ssjgl()`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md)
+    warns when no PIP \> 0.5 at the last step, and `carry_pi` is
+    optional. Same logic in the C++ (`ssjgl_em_inner_cpp`) and R EM
+    loops; `tests/testthat/test-pi-fixes.R`.
+
+6.  **Correctness fixes (2026-10, see NEWS.md)**: lambda = 0 drops its
     prior terms in the E-step (`laplace_logprior()`); `getmissing()`
     uses `drop = FALSE`; data are always centred internally when
     imputing, and `imputed` is returned on the original scale; the
@@ -215,7 +224,12 @@ R CMD INSTALL .
 
 ## TODO (low priority)
 
-- None currently.
+- **SSVS timing at p \>= 200 (on hold, user decision 2026-10-21)**:
+  `inst/scripts/bench_runtime.R --multiggm --multiggm-large` times
+  multiGGM SSVS at p = 200/400 (hours per fit; results are cached in
+  bench-cache/). Needed before the paper makes any EM-vs-MCMC speed
+  claim: at p \<= 100 SSVS (5000 + 1000 iterations) was as fast as
+  ssjgl() (`inst/extdata/bench_runtime.csv`).
 
 ## Cross-project Notes (multiGGMr, ggmtools)
 

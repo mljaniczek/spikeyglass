@@ -40,6 +40,18 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="spikeyglass-010">spikeyglass 0.1.0<a class="anchor" aria-label="anchor" href="#spikeyglass-010"></a></h2>
 <div class="section level3">
+<h3 id="pip-collapse-pi-handling-in-the-em-0-1-0">PIP collapse (pi handling in the EM)<a class="anchor" aria-label="anchor" href="#pip-collapse-pi-handling-in-the-em-0-1-0"></a></h3>
+<p>A diagnostic of the PIP collapse seen in the DiNA simulation is in <code>data-raw/pip-collapse-diagnostic.md</code>. It was caused by ladders ending at a small <code>lambda1/v0</code> (e.g. 16): an edge needs roughly <code>sum_g |theta_g| &gt; (G log r - logit(pi)) / (r - 1)</code>, <code>r = lambda1/v0</code>, to reach PIP 0.5. Below that bar the pi update shrinks pi, which raises the bar again. The following changes make the EM robust to this and make it visible:</p>
+<ul><li>pi_delta and pi_xi are kept inside <code>[1/N, 1 - 1/N]</code>, <code>N = p(p-1)/2</code>. pi_xi could previously reach exactly 0 and stay there (<code>log(0)</code> in the E-step), so <code>problist2</code> was identically 0.</li>
+<li>EM convergence now also requires the change in <code>log(pi)</code> to be below the new <code>tol.pi</code> (default 1e-3). Checking theta alone could stop a ladder step while pi was still falling by orders of magnitude per iteration.</li>
+<li>
+<code><a href="../reference/ssjgl.html">ssjgl()</a></code> warns when the last ladder step has no edge with PIP &gt; 0.5 or pi_delta is at its floor.</li>
+<li>New <code>carry_pi = FALSE</code>. If <code>TRUE</code>, pi starts each ladder step from the previous step’s value instead of the prior mean.</li>
+<li>
+<code><a href="../reference/ssjgl.html">?ssjgl</a></code> gains a section on what the PIPs are (EM conditional probabilities that rank edges, not calibrated posterior probabilities) and on the collapse condition.</li>
+</ul><p>For fits that did not collapse, the final estimates are unchanged (to 1e-14 on the reference fits); some first ladder steps take one iteration more or fewer.</p>
+</div>
+<div class="section level3">
 <h3 id="cran-preparation-0-1-0">CRAN preparation<a class="anchor" aria-label="anchor" href="#cran-preparation-0-1-0"></a></h3>
 <ul><li>
 <code><a href="../reference/ssjgl.html">ssjgl()</a></code> gains <code>verbose = FALSE</code>. Progress (each EM iteration on the R path, each ladder step, re-initialisation notices) is reported with <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> only when <code>verbose = TRUE</code>. It was printed unconditionally with <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code>. <code><a href="../reference/SSJGL_select_v0_cv.html">SSJGL_select_v0_cv()</a></code>, <code><a href="../reference/SSJGL_final_with_pcor_CI.html">SSJGL_final_with_pcor_CI()</a></code> and <code><a href="../reference/SSJGL_CV_final_pcorCI.html">SSJGL_CV_final_pcorCI()</a></code> now default to <code>verbose = FALSE</code> and use <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code>.</li>

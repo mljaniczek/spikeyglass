@@ -72,7 +72,11 @@ the ADMM solver per block.</p>
 <span>  <span class="va">tol_em</span>,</span>
 <span>  <span class="va">maxitr_jgl</span>,</span>
 <span>  <span class="va">tol_jgl</span>,</span>
-<span>  <span class="va">truncate</span></span>
+<span>  <span class="va">truncate</span>,</span>
+<span>  <span class="va">pi_delta_init</span>,</span>
+<span>  <span class="va">pi_xi_init</span>,</span>
+<span>  <span class="va">pi_floor</span>,</span>
+<span>  <span class="va">tol_pi</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -154,6 +158,18 @@ the ADMM solver per block.</p>
 
 <dt id="arg-truncate">truncate<a class="anchor" aria-label="anchor" href="#arg-truncate"></a></dt>
 <dd><p>Threshold for zeroing small entries</p></dd>
+
+
+<dt id="arg-pi-delta-init-pi-xi-init">pi_delta_init, pi_xi_init<a class="anchor" aria-label="anchor" href="#arg-pi-delta-init-pi-xi-init"></a></dt>
+<dd><p>Starting values of pi_delta and pi_xi</p></dd>
+
+
+<dt id="arg-pi-floor">pi_floor<a class="anchor" aria-label="anchor" href="#arg-pi-floor"></a></dt>
+<dd><p>pi is kept between pi_floor and 1 - pi_floor</p></dd>
+
+
+<dt id="arg-tol-pi">tol_pi<a class="anchor" aria-label="anchor" href="#arg-tol-pi"></a></dt>
+<dd><p>Convergence tolerance for the change in log(pi)</p></dd>
 
 </dl></div>
     <div class="section level2">

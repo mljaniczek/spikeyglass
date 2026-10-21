@@ -70,6 +70,7 @@ penalization.</p>
 <span>  b <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  maxitr.em <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  tol.em <span class="op">=</span> <span class="fl">1e-04</span>,</span>
+<span>  tol.pi <span class="op">=</span> <span class="fl">0.001</span>,</span>
 <span>  maxitr.jgl <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  tol.jgl <span class="op">=</span> <span class="fl">1e-05</span>,</span>
 <span>  truncate <span class="op">=</span> <span class="fl">1e-05</span>,</span>
@@ -77,6 +78,7 @@ penalization.</p>
 <span>  c <span class="op">=</span> <span class="fl">0.1</span>,</span>
 <span>  impute <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  carry_pi <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -169,7 +171,16 @@ a sparse prior.</p></dd>
 
 
 <dt id="arg-tol-em">tol.em<a class="anchor" aria-label="anchor" href="#arg-tol-em"></a></dt>
-<dd><p>Numeric EM convergence tolerance. Default 1e-4.</p></dd>
+<dd><p>Numeric EM convergence tolerance for the largest absolute
+change in any precision entry. Default 1e-4.</p></dd>
+
+
+<dt id="arg-tol-pi">tol.pi<a class="anchor" aria-label="anchor" href="#arg-tol-pi"></a></dt>
+<dd><p>Numeric EM convergence tolerance for the change in
+<code>log(pi_delta)</code> (and <code>log(pi_xi)</code> if <code>doubly</code>). A ladder
+step stops only when both tolerances are met; checking theta alone
+could stop the EM while pi was still collapsing. Default 1e-3 (a 0.1\<!-- % -->
+relative change).</p></dd>
 
 
 <dt id="arg-maxitr-jgl">maxitr.jgl<a class="anchor" aria-label="anchor" href="#arg-maxitr-jgl"></a></dt>
@@ -216,6 +227,13 @@ precision matrices are estimated on the correlation scale and
 whatever the variables' units. Recommended unless the variables are
 already on a common, meaningful scale. Default <code>FALSE</code> (for
 back-compatibility). Imputed values are returned on the original scale.</p></dd>
+
+
+<dt id="arg-carry-pi">carry_pi<a class="anchor" aria-label="anchor" href="#arg-carry-pi"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, pi_delta and pi_xi start each
+ladder step from their values at the end of the previous step. If
+<code>FALSE</code> (default, as in Li et al. 2019), they restart at the prior
+mean <code>a/(a+b)</code>.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -309,6 +327,28 @@ settings, e.g. by <code><a href="diff_edges.html">diff_edges</a></code>.</p></dd
 steps.</p>
     </div>
     <div class="section level2">
+    <h2 id="posterior-inclusion-probabilities">Posterior inclusion probabilities<a class="anchor" aria-label="anchor" href="#posterior-inclusion-probabilities"></a></h2>
+
+
+<p><code>problist1</code> holds the E-step probabilities \(P(\delta_{jk} = 1)\)
+given the current estimates. They are conditional probabilities inside an
+EM (posterior-mode) algorithm, not calibrated posterior probabilities, so
+they should not be used for Bayesian FDR control. They do rank edges well,
+and PIP &gt; 0.5 is a reasonable selection rule with the default ladder.</p>
+<p>An edge reaches PIP 0.5 only if, roughly,
+\(\sum_g |\theta^{(g)}_{jk}| &gt; (G \log r - \mathrm{logit}\,\pi_\delta)
+/ (r - 1)\), with \(r = \lambda_1 / v_0\). If the ladder ends at a small
+\(r\) (e.g. 16), this bar is above typical edge sizes; then
+\(\pi_\delta\) shrinks, which raises the bar again, and the PIPs
+collapse towards 0 even though they still rank edges. The default ladder
+ends at \(r = 100\). <code>ssjgl()</code> warns when no edge has PIP &gt; 0.5 at
+the last step. \(\pi\) is kept inside \([1/N, 1 - 1/N]\), where
+\(N = p(p-1)/2\). See <code>data-raw/pip-collapse-diagnostic.md</code> in the
+package sources for the analysis.</p>
+<p><code>problist2</code> (\(P(\xi_{jk} = 1)\), doubly only) is the most fragile
+output; treat it as a ranking.</p>
+    </div>
+    <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Li, Z. R., McCormick, T. H., &amp; Clark, S. J. (2019). Bayesian Joint
 Spike-and-Slab Graphical Lasso. <em>ICML 2019</em>.</p>
@@ -332,14 +372,14 @@ Spike-and-Slab Graphical Lasso. <em>ICML 2019</em>.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Groups (K): 2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Variables (p): 10</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   v0 ladder steps: 3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Total EM iterations: 24</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Total time: 0.2 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Group 1: 10 non-zero edges (from precision)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Group 2: 10 non-zero edges (from precision)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Edges with P(inclusion) &gt; 0.5: 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Total EM iterations: 42</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Total time: 0.5 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Group 1: 12 non-zero edges (from precision)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Group 2: 12 non-zero edges (from precision)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Edges with P(inclusion) &gt; 0.5: 12</span>
 <span class="r-in"><span><span class="va">adj</span> <span class="op">&lt;-</span> <span class="fu"><a href="extract_adjacency.html">extract_adjacency</a></span><span class="op">(</span><span class="va">fit</span>, threshold <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">adj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/lower.tri.html" class="external-link">upper.tri</a></span><span class="op">(</span><span class="va">adj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>  <span class="co"># estimated edge count</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 12</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
