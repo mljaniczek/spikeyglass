@@ -299,16 +299,16 @@ ladder).</p>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">perf</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;         ratio   AUC    F1 edges uncertain</span></span>
-<span><span class="co">#&gt;  [1,]   5.000 0.990    NA     0         0</span></span>
-<span><span class="co">#&gt;  [2,]   8.341 0.983    NA     0         0</span></span>
-<span><span class="co">#&gt;  [3,]  13.913 0.958 0.841    21         0</span></span>
-<span><span class="co">#&gt;  [4,]  23.208 0.948 0.913    29         0</span></span>
-<span><span class="co">#&gt;  [5,]  38.713 0.948 0.913    29         0</span></span>
-<span><span class="co">#&gt;  [6,]  64.577 0.942 0.913    29         0</span></span>
-<span><span class="co">#&gt;  [7,] 107.722 0.941 0.913    29         0</span></span>
-<span><span class="co">#&gt;  [8,] 179.691 0.943 0.913    29         0</span></span>
-<span><span class="co">#&gt;  [9,] 299.742 0.935 0.913    29         0</span></span>
-<span><span class="co">#&gt; [10,] 500.000 0.938 0.913    29         0</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1,]   5.000 0.988    NA     0         0</span></span>
+<span><span class="co">#&gt;  [2,]   8.341 0.980 0.243     4         4</span></span>
+<span><span class="co">#&gt;  [3,]  13.913 0.925 0.745    18         0</span></span>
+<span><span class="co">#&gt;  [4,]  23.208 0.874 0.846    23         0</span></span>
+<span><span class="co">#&gt;  [5,]  38.713 0.874 0.846    23         0</span></span>
+<span><span class="co">#&gt;  [6,]  64.577 0.869 0.846    23         0</span></span>
+<span><span class="co">#&gt;  [7,] 107.722 0.876 0.846    23         0</span></span>
+<span><span class="co">#&gt;  [8,] 179.691 0.875 0.846    23         0</span></span>
+<span><span class="co">#&gt;  [9,] 299.742 0.875 0.846    23         0</span></span>
+<span><span class="co">#&gt; [10,] 500.000 0.874 0.846    23         0</span></span></code></pre></div>
 <p>Early steps (small <code>lambda1/v0</code>) give graded PIPs and a
 high AUC, but select few edges at PIP &gt; 0.5. As
 <code>lambda1/v0</code> grows, more PIPs move to 0 or 1. The edge set

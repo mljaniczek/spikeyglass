@@ -188,12 +188,11 @@ de <- diff_edges(fit, Y = sim$data_list, B = 20)
 de
 #> <ssjgl_diff_edges>
 #>   group 1 vs group 2, pcor scale, permutation (B = 20), v0 step 3
-#>   4 of 28 edges selected at BH-adjusted p < 0.05
-#>  i j node1 node2 est_g1  est_g2   diff  pvalue  p_adj selected
-#>  1 2    V1    V2  0.579 -0.0574  0.636 0.00178 0.0125     TRUE
-#>  4 5    V4    V5  0.193 -0.3917  0.584 0.00178 0.0125     TRUE
-#>  2 3    V2    V3 -0.269  0.2658 -0.535 0.00178 0.0125     TRUE
-#>  2 4    V2    V4 -0.182  0.2619 -0.444 0.00178 0.0125     TRUE
+#>   3 of 28 edges selected at BH-adjusted p < 0.05
+#>  i j node1 node2 est_g1 est_g2   diff  pvalue  p_adj selected
+#>  2 3    V2    V3 -0.527  0.325 -0.853 0.00178 0.0166     TRUE
+#>  2 4    V2    V4 -0.348  0.304 -0.653 0.00178 0.0166     TRUE
+#>  4 5    V4    V5  0.144 -0.446  0.590 0.00178 0.0166     TRUE
 plot(de)
 
 # }

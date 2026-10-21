@@ -304,12 +304,12 @@ print(fit)
 #>   Groups (K): 2
 #>   Variables (p): 10
 #>   v0 ladder steps: 3
-#>   Total EM iterations: 42
-#>   Total time: 0.5 seconds
-#>   Group 1: 12 non-zero edges (from precision)
-#>   Group 2: 12 non-zero edges (from precision)
-#>   Edges with P(inclusion) > 0.5: 12
+#>   Total EM iterations: 24
+#>   Total time: 0.2 seconds
+#>   Group 1: 10 non-zero edges (from precision)
+#>   Group 2: 10 non-zero edges (from precision)
+#>   Edges with P(inclusion) > 0.5: 10
 adj <- extract_adjacency(fit, threshold = 0.5)
 sum(adj[[1]][upper.tri(adj[[1]])])  # estimated edge count
-#> [1] 12
+#> [1] 10
 ```

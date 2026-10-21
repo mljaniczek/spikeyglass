@@ -37,8 +37,8 @@ summary(fit)
 #> 
 #> Edge counts per v0 step:
 #>      Group1 Group2
-#> v0_1     26     26
+#> v0_1     24     24
 #> 
-#> EM iterations per step: 10 
-#> Pi_delta per step: 0.5778 
+#> EM iterations per step: 11 
+#> Pi_delta per step: 0.5329 
 ```

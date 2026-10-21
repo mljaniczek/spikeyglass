@@ -35,9 +35,9 @@ print(fit)
 #>   Groups (K): 2
 #>   Variables (p): 10
 #>   v0 ladder steps: 1
-#>   Total EM iterations: 10
+#>   Total EM iterations: 11
 #>   Total time: 0.1 seconds
-#>   Group 1: 26 non-zero edges (from precision)
-#>   Group 2: 26 non-zero edges (from precision)
-#>   Edges with P(inclusion) > 0.5: 26
+#>   Group 1: 24 non-zero edges (from precision)
+#>   Group 2: 24 non-zero edges (from precision)
+#>   Edges with P(inclusion) > 0.5: 24
 ```

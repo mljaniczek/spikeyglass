@@ -31,5 +31,5 @@ fit <- ssjgl(sim$data_list, penalty = "fused",
              v0s = 0.01, maxitr.em = 10, impute = FALSE)
 pcor <- extract_pcor(fit)
 range(pcor[[1]])  # values in [-1, 1]
-#> [1] -0.4336362  1.0000000
+#> [1] -0.3935301  1.0000000
 ```
