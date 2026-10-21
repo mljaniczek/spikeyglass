@@ -1,6 +1,8 @@
 # Plot the solution path
 
-Plots the solution paths from ssjgl().
+Plots each off-diagonal precision entry (or, with `normalize = TRUE`,
+partial correlation) against v0 along the ladder, one panel per group.
+Entries whose PIP is below `thres` at a step are drawn as 0.
 
 ## Usage
 
@@ -25,20 +27,20 @@ plot_path(
 
 - v0s:
 
-  list of v0 input
+  The v0 values of the fit (`obj$v0s`).
 
 - obj:
 
-  object created using ssjgl
+  An `ssjgl` object.
 
 - thres:
 
-  default threshold for probability of edge inclusion
+  PIP threshold. Default 0.5.
 
 - normalize:
 
-  True or False (default False) on if normalized covariance should be
-  returned
+  Logical. If `TRUE`, plot partial correlations instead of precision
+  entries. Default `FALSE`.
 
 - xlab:
 
@@ -54,7 +56,8 @@ plot_path(
 
 - par:
 
-  default c(1,2) to list layout of output plots
+  Layout `c(rows, cols)` for the K panels, passed to `par(mfrow = )` and
+  restored on exit. Default `c(1, 2)`; `NULL` leaves the layout alone.
 
 - ylim:
 
@@ -66,7 +69,7 @@ plot_path(
 
 - position:
 
-  Default "bottomright". For position of legend.
+  Legend position, or `"none"`. Default `"bottomright"`.
 
 - ...:
 
@@ -79,14 +82,11 @@ Invisible NULL. Called for side effect (plot).
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
-v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 5)
-fit <- ssjgl(sim$data_list, penalty = "fused",
-             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
-             v0s = v0s, maxitr.em = 50, impute = FALSE)
-plot_path(v0s, fit, thres = 0.5,
+sim <- simulate_ssjgl_data(K = 2, p = 8, n = 100, seed = 42)
+fit <- ssjgl(sim$data_list, lambda0 = 1, lambda1 = 1, lambda2 = 1,
+             v0s = make_v0_ladder(1, n_steps = 5, min_ratio = 5, max_ratio = 200),
+             standardize = TRUE, maxitr.em = 50, impute = FALSE)
+plot_path(fit$v0s, fit, thres = 0.5,
           xlab = expression(v[0]), ylab = "Precision entries",
           main = c("Group 1", "Group 2"))
-} # }
 ```

@@ -34,7 +34,6 @@ sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
 fit <- ssjgl(sim$data_list, penalty = "fused",
              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
              v0s = 0.01, maxitr.em = 10, impute = FALSE)
-#> Ladder= 1 v0 = 0.01 done. Time: 0
 adj <- extract_adjacency(fit, threshold = 0.5)
 sum(adj[[1]][upper.tri(adj[[1]])])  # edge count
 #> [1] 26

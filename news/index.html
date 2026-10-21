@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">spikeyglass</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mljaniczek/spikeyglass/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -33,27 +34,25 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-
+      <small>Source: <a href="https://github.com/mljaniczek/spikeyglass/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="spikeyglass-development-version">spikeyglass (development version)<a class="anchor" aria-label="anchor" href="#spikeyglass-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.0" id="spikeyglass-010">spikeyglass 0.1.0<a class="anchor" aria-label="anchor" href="#spikeyglass-010"></a></h2>
 <div class="section level3">
-<h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
-<ul><li><p><code>lambda2 = 0</code> (separate estimation) no longer sets every posterior inclusion probability to 0. The E-step evaluated <code>log(lambda2 / v)</code>, which is <code>-Inf</code> for both spike and slab, so the posterior was <code>NaN</code> and was replaced by 0. A penalty with <code>lambda = 0</code> now contributes no prior terms to the E-step. The same applies to <code>lambda1 = 0</code>. Fixed in both the R and C++ E-steps.</p></li>
-<li><p>Imputation no longer fails when a group has exactly one missing cell (<code>getmissing()</code> dropped the missing-cell index matrix to a vector).</p></li>
-<li><p><code>fit$imputed</code> is no longer all <code>NA</code> when <code>normalize = FALSE</code>, and imputed values are always returned on the original data scale. The conditional-mean imputation assumes mean-zero data, so the data are now always centred internally when there are cells to impute. Previously, with <code>normalize = FALSE</code>, imputations were shrunk towards 0 rather than towards the variable means. Fits without missing data are unaffected, because the sample covariance is centred anyway.</p></li>
-<li><p>With missing data, the M-step now uses the expected sample covariance given the observed data, S(imputed) + (sum of conditional covariances) / n, as in Li et al. (2019), supplement B. Previously this correction was used only for block screening, and the ADMM recomputed S from the imputed data alone. As a result, the internal ADMM now takes covariance matrices rather than data, and the singleton-node solver is vendored from JGL (<code>JGL:::admm.iters.unconnected</code> is no longer called).</p></li>
-<li><p>The non-doubly R E-step (<code>gete()</code>) now uses the log-sum-exp trick, matching the C++ version. It no longer returns <code>NaN</code> when both the spike and slab log-densities underflow.</p></li>
-<li><p>In the R EM path (fused penalty with K &gt; 2, or imputation), <code>pi2list</code> is no longer updated when <code>doubly = FALSE</code>. It now stays at <code>a / (a + b)</code>, matching the C++ path. It was previously reported as <code>(a - 1) / (a + b + n_edges - 2)</code>, which is meaningless without a similarity indicator.</p></li>
-</ul></div>
-<div class="section level3">
-<h3 id="breaking-changes-development-version">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-development-version"></a></h3>
-<ul><li>The <code>warm</code> and <code>warm.connected</code> arguments of <code><a href="../reference/ssjgl.html">ssjgl()</a></code> have been removed. They were accepted but never used.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="testing-development-version">Testing<a class="anchor" aria-label="anchor" href="#testing-development-version"></a></h3>
-<ul><li>New regression tests for each fix above, plus a test that the C++ and R EM paths agree to 1e-10 for fused/group penalties with and without the doubly prior (K = 2).</li>
+<h3 id="cran-preparation-0-1-0">CRAN preparation<a class="anchor" aria-label="anchor" href="#cran-preparation-0-1-0"></a></h3>
+<ul><li>
+<code><a href="../reference/ssjgl.html">ssjgl()</a></code> gains <code>verbose = FALSE</code>. Progress (each EM iteration on the R path, each ladder step, re-initialisation notices) is reported with <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code> only when <code>verbose = TRUE</code>. It was printed unconditionally with <code><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat()</a></code>. <code><a href="../reference/SSJGL_select_v0_cv.html">SSJGL_select_v0_cv()</a></code>, <code><a href="../reference/SSJGL_final_with_pcor_CI.html">SSJGL_final_with_pcor_CI()</a></code> and <code><a href="../reference/SSJGL_CV_final_pcorCI.html">SSJGL_CV_final_pcorCI()</a></code> now default to <code>verbose = FALSE</code> and use <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code>.</li>
+<li>
+<code><a href="../reference/simulate_ssjgl_data.html">simulate_ssjgl_data()</a></code>, <code><a href="../reference/SSJGL_select_v0_cv.html">SSJGL_select_v0_cv()</a></code> and <code><a href="../reference/SSJGL_final_with_pcor_CI.html">SSJGL_final_with_pcor_CI()</a></code> no longer change the caller’s random-number stream: the RNG state is restored on exit after using <code>seed</code>.</li>
+<li>
+<code><a href="../reference/plot_path.html">plot_path()</a></code> restores <code><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par()</a></code> on exit, has dead code removed, and its example now runs. Its legend now says what is drawn (the old “Edge” / “Non-edge” legend referred to a true graph the function never had).</li>
+<li>
+<code>simdat</code> is regenerated reproducibly with <code><a href="../reference/simulate_ssjgl_data.html">simulate_ssjgl_data()</a></code> (<code>data-raw/simdat.R</code>) and now also contains the true precision matrices (<code>Omega</code>). The previous version came from a script that could not be run.</li>
+<li>The unused <code>fit1.Rdata</code> files are removed, so the package no longer depends on R &gt;= 3.5.0 through serialized data. It now depends on R &gt;= 4.1.0.</li>
+<li>New <code>inst/CITATION</code> (method paper and package), <code>CITATION.cff</code> and <code>cran-comments.md</code>. The DESCRIPTION has a fuller description citing Li et al. (2019), <code>BugReports</code>, and the GitHub URL. The Title is in title case.</li>
+<li>GitHub Actions: R CMD check on macOS, Windows and Ubuntu (devel, release, oldrel-1), plus test coverage.</li>
+<li>The profiling script moved from <code>inst/profiling/</code> to <code>scripts/</code> (not installed).</li>
 </ul></div>
 </div>
     <div class="section level2">

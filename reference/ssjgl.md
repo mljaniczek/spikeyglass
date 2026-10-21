@@ -16,7 +16,7 @@ ssjgl(
   lambda1,
   lambda2,
   v1 = 1,
-  v0s = c(0.1, 0.03, 0.01),
+  v0s = NULL,
   doubly = FALSE,
   rho = 1,
   a = 1,
@@ -28,7 +28,9 @@ ssjgl(
   truncate = 1e-05,
   normalize = FALSE,
   c = 0.1,
-  impute = TRUE
+  impute = TRUE,
+  standardize = FALSE,
+  verbose = FALSE
 )
 ```
 
@@ -53,16 +55,14 @@ ssjgl(
 - lambda1:
 
   Scalar (or matrix) base penalty on off-diagonal entries (edge-wise
-  sparsity). The E-step produces adaptive weights that multiply this
-  value, so the effective penalty is edge-specific. The method is
-  relatively insensitive to the absolute value of `lambda1` (Li et al.,
-  2019); what matters most is the ratio `lambda1/v0`. Guidance:
-
-  - Normalized data (`normalize = TRUE`): use 0.01–0.1
-
-  - Raw data with moderate variance: use 0.5–1
-
-  - p \>\> n settings: use smaller values (0.01)
+  sparsity). In the prior, each off-diagonal precision entry has a
+  Laplace prior with rate `lambda1/v0` in the spike and `lambda1/v1` in
+  the slab, so sparsity is governed by the ratio `lambda1/v0` (see
+  `v0s`). Li et al. (2019) use `lambda1 = 1` with variables on unit
+  scale, and that is the recommended starting point with
+  `standardize = TRUE`. If the data are not standardised, the meaning of
+  `lambda1` depends on the variables' scales, because the penalty acts
+  on precision entries.
 
 - lambda2:
 
@@ -84,17 +84,22 @@ ssjgl(
 
 - v0s:
 
-  Numeric vector of spike variance parameters, typically **decreasing**.
-  Smaller v0 = stronger shrinkage for unlikely edges. The spike standard
-  deviation `sqrt(v0)` sets the scale below which partial correlations
-  are considered noise. For normalized data where partial correlations
-  live in -1, 1, `v0 = 0.01` (spike SD = 0.1) provides a natural
-  noise/signal boundary. The default `c(0.1, 0.03, 0.01)` provides a
-  short warm-start ladder ending at this target. See
+  Numeric vector of spike variances, **decreasing**: the ladder for the
+  dynamic posterior exploration of Li et al. (2019), each step
+  warm-started from the previous one. The spike is a Laplace prior on
+  the precision entries with rate `lambda1/v0`, i.e. scale `v0/lambda1`;
+  it is not a normal prior, and `sqrt(v0)` has no partial-correlation
+  interpretation. Only `lambda1/v0` matters. As a rough guide, a
+  non-edge's precision entry is soft-thresholded in the M-step at about
+  `lambda1/(n v0)` on the covariance scale (the correlation scale for
+  standardised data), for group sample size `n`. Default `NULL` uses
+  `make_v0_ladder(lambda1)`, the 3-step ladder
+  `lambda1/v0 = 10, 31.6, 100`, i.e. `v0s = c(0.1, 0.0316, 0.01)` at
+  `lambda1 = 1`. This default was chosen by a simulation study; see
   [`vignette("parameter-exploration")`](https://mljaniczek.github.io/spikeyglass/articles/parameter-exploration.md)
-  for guidance on choosing v0 and the
-  [`make_v0_ladder`](https://mljaniczek.github.io/spikeyglass/reference/make_v0_ladder.md)
-  helper for generating longer exploration ladders.
+  and
+  [`make_v0_ladder`](https://mljaniczek.github.io/spikeyglass/reference/make_v0_ladder.md).
+  It requires a positive scalar `lambda1`; otherwise supply `v0s`.
 
 - doubly:
 
@@ -137,11 +142,13 @@ ssjgl(
 
 - normalize:
 
-  Logical. If `TRUE`, mean-centers each variable. Default `FALSE`.
-  Centring does not change the estimates, because the sample covariance
-  is centred anyway. When missing values are imputed the data are always
-  centred internally (the conditional-mean imputation assumes mean zero)
-  and the imputed values are returned on the original scale.
+  Logical. If `TRUE`, mean-centres each variable within each group. It
+  does *not* scale. Default `FALSE`. Centring does not change the
+  estimates, because the sample covariance is centred anyway. When
+  missing values are imputed the data are always centred internally (the
+  conditional-mean imputation assumes mean zero), and the imputed values
+  are returned on the original scale. Kept for back-compatibility; see
+  `standardize`.
 
 - c:
 
@@ -156,9 +163,27 @@ ssjgl(
   conditional covariance of the missing cells (Li et al., 2019,
   supplement B). Default `TRUE`.
 
+- standardize:
+
+  Logical. If `TRUE`, centres *and* scales each variable to unit
+  variance within each group before fitting, so the precision matrices
+  are estimated on the correlation scale and `lambda1`, `lambda2` and
+  `v0s` have the same meaning whatever the variables' units. Recommended
+  unless the variables are already on a common, meaningful scale.
+  Default `FALSE` (for back-compatibility). Imputed values are returned
+  on the original scale.
+
+- verbose:
+
+  Logical. If `TRUE`, report progress (each EM iteration on the R path,
+  and each ladder step) with
+  [`message()`](https://rdrr.io/r/base/message.html). Default `FALSE`.
+
 ## Value
 
-An object of class `"ssjgl"`, a list with elements:
+An object of class `"ssjgl"`. With `standardize = TRUE` the precision
+matrices are those of the standardised variables. It is a list with
+elements:
 
 - thetalist:
 
@@ -214,11 +239,43 @@ An object of class `"ssjgl"`, a list with elements:
 
   Matrix of (group, row, col) for missing values, or NULL.
 
+- v0s, v1, lambda0, lambda1, lambda2, penalty, doubly, a, b:
+
+  The hyperparameters used.
+
+- n, p, K:
+
+  Sample sizes (length K), number of variables and number of groups.
+
+- varnames, groupnames:
+
+  Variable names (from `colnames(Y[[1]])`, or `V1, ..., Vp`) used as
+  dimnames of every p x p output, and group names (from `names(Y)`,
+  possibly NULL).
+
+- normalize, standardize, center, scale:
+
+  The preprocessing used: `center` is the K x p matrix of column means
+  subtracted (NULL if the data were not centred) and `scale` the K x p
+  matrix of standard deviations divided by (NULL unless
+  `standardize = TRUE`).
+
+- args:
+
+  Named list of every argument except `Y`, as used (with the default
+  `v0s` filled in); used to refit with the same settings, e.g. by
+  [`diff_edges`](https://mljaniczek.github.io/spikeyglass/reference/diff_edges.md).
+
+- call:
+
+  The matched call.
+
 ## Details
 
 The algorithm follows the dynamic posterior exploration strategy of Li
-et al. (2019), iterating over a decreasing ladder of spike variance
-parameters `v0s` with warm-starting between steps.
+et al. (2019), iterating over a decreasing ladder of spike variances
+`v0s` (increasing spike penalty `lambda1/v0`) with warm-starting between
+steps.
 
 ## References
 
@@ -238,23 +295,21 @@ Spike-and-Slab Graphical Lasso. *ICML 2019*.
 ``` r
 sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
 fit <- ssjgl(sim$data_list, penalty = "fused",
-             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
-             v0s = c(0.1, 0.03, 0.01),
-             maxitr.em = 50, impute = FALSE)
-#> Ladder= 1 v0 = 0.1 done. Time: 0
-#> Ladder= 2 v0 = 0.03 done. Time: 0
-#> Ladder= 3 v0 = 0.01 done. Time: 0
+             lambda0 = 1, lambda1 = 1, lambda2 = 1,
+             standardize = TRUE, maxitr.em = 50, impute = FALSE)
+fit$v0s  # the default ladder, make_v0_ladder(lambda1 = 1)
+#> [1] 0.10000000 0.03162278 0.01000000
 print(fit)
 #> Spike-and-Slab Joint Graphical Lasso (SSJGL)
 #>   Groups (K): 2
 #>   Variables (p): 10
 #>   v0 ladder steps: 3
-#>   Total EM iterations: 25
-#>   Total time: 0.3 seconds
-#>   Group 1: 11 non-zero edges (from precision)
-#>   Group 2: 11 non-zero edges (from precision)
-#>   Edges with P(inclusion) > 0.5: 11
+#>   Total EM iterations: 42
+#>   Total time: 0.5 seconds
+#>   Group 1: 12 non-zero edges (from precision)
+#>   Group 2: 12 non-zero edges (from precision)
+#>   Edges with P(inclusion) > 0.5: 12
 adj <- extract_adjacency(fit, threshold = 0.5)
 sum(adj[[1]][upper.tri(adj[[1]])])  # estimated edge count
-#> [1] 11
+#> [1] 12
 ```

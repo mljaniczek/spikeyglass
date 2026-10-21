@@ -15,7 +15,7 @@ penalization."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">spikeyglass</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,7 @@ penalization."></head><body>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mljaniczek/spikeyglass/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -41,7 +42,7 @@ penalization."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Bayesian Spike-and-Slab Joint Graphical Lasso</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/mljaniczek/spikeyglass/blob/main/R/ssjgl.R" class="external-link"><code>R/ssjgl.R</code></a></small>
       <div class="d-none name"><code>ssjgl.Rd</code></div>
     </div>
 
@@ -62,7 +63,7 @@ penalization.</p>
 <span>  <span class="va">lambda1</span>,</span>
 <span>  <span class="va">lambda2</span>,</span>
 <span>  v1 <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  v0s <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.03</span>, <span class="fl">0.01</span><span class="op">)</span>,</span>
+<span>  v0s <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  doubly <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  rho <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  a <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -74,7 +75,9 @@ penalization.</p>
 <span>  truncate <span class="op">=</span> <span class="fl">1e-05</span>,</span>
 <span>  normalize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  c <span class="op">=</span> <span class="fl">0.1</span>,</span>
-<span>  impute <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  impute <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -100,13 +103,14 @@ recommended in most cases.</p></dd>
 
 <dt id="arg-lambda-">lambda1<a class="anchor" aria-label="anchor" href="#arg-lambda-"></a></dt>
 <dd><p>Scalar (or matrix) base penalty on off-diagonal entries
-(edge-wise sparsity). The E-step produces adaptive weights that multiply
-this value, so the effective penalty is edge-specific. The method is
-relatively insensitive to the absolute value of <code>lambda1</code> (Li et al.,
-2019); what matters most is the ratio <code>lambda1/v0</code>. Guidance:</p><ul><li><p>Normalized data (<code>normalize = TRUE</code>): use 0.01–0.1</p></li>
-<li><p>Raw data with moderate variance: use 0.5–1</p></li>
-<li><p>p &gt;&gt; n settings: use smaller values (0.01)</p></li>
-</ul></dd>
+(edge-wise sparsity). In the prior, each off-diagonal precision entry
+has a Laplace prior with rate <code>lambda1/v0</code> in the spike and
+<code>lambda1/v1</code> in the slab, so sparsity is governed by the ratio
+<code>lambda1/v0</code> (see <code>v0s</code>). Li et al. (2019) use
+<code>lambda1 = 1</code> with variables on unit scale, and that is the
+recommended starting point with <code>standardize = TRUE</code>. If the data
+are not standardised, the meaning of <code>lambda1</code> depends on the
+variables' scales, because the penalty acts on precision entries.</p></dd>
 
 
 <dt id="arg-lambda-">lambda2<a class="anchor" aria-label="anchor" href="#arg-lambda-"></a></dt>
@@ -124,16 +128,21 @@ left at 1.</p></dd>
 
 
 <dt id="arg-v-s">v0s<a class="anchor" aria-label="anchor" href="#arg-v-s"></a></dt>
-<dd><p>Numeric vector of spike variance parameters, typically
-<strong>decreasing</strong>. Smaller v0 = stronger shrinkage for unlikely edges.
-The spike standard deviation <code>sqrt(v0)</code> sets the scale below which
-partial correlations are considered noise. For normalized data where
-partial correlations live in -1, 1, <code>v0 = 0.01</code> (spike SD = 0.1)
-provides a natural noise/signal boundary. The default
-<code>c(0.1, 0.03, 0.01)</code> provides a short warm-start ladder ending at
-this target. See <code><a href="../articles/parameter-exploration.html">vignette("parameter-exploration")</a></code> for guidance
-on choosing v0 and the <code><a href="make_v0_ladder.html">make_v0_ladder</a></code> helper for generating
-longer exploration ladders.</p></dd>
+<dd><p>Numeric vector of spike variances, <strong>decreasing</strong>: the
+ladder for the dynamic posterior exploration of Li et al. (2019), each
+step warm-started from the previous one. The spike is a Laplace prior on
+the precision entries with rate <code>lambda1/v0</code>, i.e. scale
+<code>v0/lambda1</code>; it is not a normal prior, and <code>sqrt(v0)</code> has no
+partial-correlation interpretation. Only <code>lambda1/v0</code> matters. As a
+rough guide, a non-edge's precision entry is soft-thresholded in the
+M-step at about <code>lambda1/(n v0)</code> on the covariance scale (the
+correlation scale for standardised data), for group sample size
+<code>n</code>. Default <code>NULL</code> uses <code>make_v0_ladder(lambda1)</code>, the
+3-step ladder <code>lambda1/v0 = 10, 31.6, 100</code>, i.e.
+<code>v0s = c(0.1, 0.0316, 0.01)</code> at <code>lambda1 = 1</code>. This default was
+chosen by a simulation study; see <code><a href="../articles/parameter-exploration.html">vignette("parameter-exploration")</a></code>
+and <code><a href="make_v0_ladder.html">make_v0_ladder</a></code>. It requires a positive scalar
+<code>lambda1</code>; otherwise supply <code>v0s</code>.</p></dd>
 
 
 <dt id="arg-doubly">doubly<a class="anchor" aria-label="anchor" href="#arg-doubly"></a></dt>
@@ -177,12 +186,13 @@ a sparse prior.</p></dd>
 
 
 <dt id="arg-normalize">normalize<a class="anchor" aria-label="anchor" href="#arg-normalize"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, mean-centers each variable.
-Default <code>FALSE</code>. Centring does not change the estimates, because
-the sample covariance is centred anyway. When missing values are imputed
-the data are always centred internally (the conditional-mean imputation
-assumes mean zero) and the imputed values are returned on the original
-scale.</p></dd>
+<dd><p>Logical. If <code>TRUE</code>, mean-centres each variable
+within each group. It does <em>not</em> scale. Default <code>FALSE</code>.
+Centring does not change the estimates, because the sample covariance is
+centred anyway. When missing values are imputed the data are always
+centred internally (the conditional-mean imputation assumes mean zero),
+and the imputed values are returned on the original scale. Kept for
+back-compatibility; see <code>standardize</code>.</p></dd>
 
 
 <dt id="arg-c">c<a class="anchor" aria-label="anchor" href="#arg-c"></a></dt>
@@ -197,10 +207,28 @@ covariance given the observed data, i.e. the covariance of the imputed
 data plus the conditional covariance of the missing cells (Li et al.,
 2019, supplement B). Default <code>TRUE</code>.</p></dd>
 
+
+<dt id="arg-standardize">standardize<a class="anchor" aria-label="anchor" href="#arg-standardize"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, centres <em>and</em> scales each
+variable to unit variance within each group before fitting, so the
+precision matrices are estimated on the correlation scale and
+<code>lambda1</code>, <code>lambda2</code> and <code>v0s</code> have the same meaning
+whatever the variables' units. Recommended unless the variables are
+already on a common, meaningful scale. Default <code>FALSE</code> (for
+back-compatibility). Imputed values are returned on the original scale.</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, report progress (each EM
+iteration on the R path, and each ladder step) with <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code>.
+Default <code>FALSE</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>An object of class <code>"ssjgl"</code>, a list with elements:</p><dl><dt>thetalist</dt>
+    <p>An object of class <code>"ssjgl"</code>. With <code>standardize = TRUE</code>
+the precision matrices are those of the standardised variables. It is a
+list with elements:</p><dl><dt>thetalist</dt>
 <dd><p>List (length = length(v0s)) of lists of K precision
 matrices (p x p) at each v0 step.</p></dd>
 
@@ -244,13 +272,41 @@ scale (one per row of <code>missed</code>), or NULL.</p></dd>
 <dt>missed</dt>
 <dd><p>Matrix of (group, row, col) for missing values, or NULL.</p></dd>
 
+<dt>v0s, v1, lambda0, lambda1, lambda2, penalty, doubly, a, b</dt>
+<dd><p>The
+hyperparameters used.</p></dd>
+
+<dt>n, p, K</dt>
+<dd><p>Sample sizes (length K), number of variables and number
+of groups.</p></dd>
+
+<dt>varnames, groupnames</dt>
+<dd><p>Variable names (from <code>colnames(Y[[1]])</code>,
+or <code>V1, ..., Vp</code>) used as dimnames of every p x p output, and
+group names (from <code>names(Y)</code>, possibly NULL).</p></dd>
+
+<dt>normalize, standardize, center, scale</dt>
+<dd><p>The preprocessing used:
+<code>center</code> is the K x p matrix of column means subtracted (NULL if
+the data were not centred) and <code>scale</code> the K x p matrix of
+standard deviations divided by (NULL unless <code>standardize = TRUE</code>).</p></dd>
+
+<dt>args</dt>
+<dd><p>Named list of every argument except <code>Y</code>, as used
+(with the default <code>v0s</code> filled in); used to refit with the same
+settings, e.g. by <code><a href="diff_edges.html">diff_edges</a></code>.</p></dd>
+
+<dt>call</dt>
+<dd><p>The matched call.</p></dd>
+
 
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The algorithm follows the dynamic posterior exploration strategy of Li et al.
-(2019), iterating over a decreasing ladder of spike variance parameters
-<code>v0s</code> with warm-starting between steps.</p>
+(2019), iterating over a decreasing ladder of spike variances <code>v0s</code>
+(increasing spike penalty <code>lambda1/v0</code>) with warm-starting between
+steps.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -267,25 +323,23 @@ Spike-and-Slab Graphical Lasso. <em>ICML 2019</em>.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="simulate_ssjgl_data.html">simulate_ssjgl_data</a></span><span class="op">(</span>K <span class="op">=</span> <span class="fl">2</span>, p <span class="op">=</span> <span class="fl">10</span>, n <span class="op">=</span> <span class="fl">50</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">ssjgl</span><span class="op">(</span><span class="va">sim</span><span class="op">$</span><span class="va">data_list</span>, penalty <span class="op">=</span> <span class="st">"fused"</span>,</span></span>
-<span class="r-in"><span>             lambda0 <span class="op">=</span> <span class="fl">1</span>, lambda1 <span class="op">=</span> <span class="fl">0.5</span>, lambda2 <span class="op">=</span> <span class="fl">0.5</span>,</span></span>
-<span class="r-in"><span>             v0s <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.03</span>, <span class="fl">0.01</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>             maxitr.em <span class="op">=</span> <span class="fl">50</span>, impute <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Ladder= 1 v0 = 0.1 done. Time: 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Ladder= 2 v0 = 0.03 done. Time: 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Ladder= 3 v0 = 0.01 done. Time: 0</span>
+<span class="r-in"><span>             lambda0 <span class="op">=</span> <span class="fl">1</span>, lambda1 <span class="op">=</span> <span class="fl">1</span>, lambda2 <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>             standardize <span class="op">=</span> <span class="cn">TRUE</span>, maxitr.em <span class="op">=</span> <span class="fl">50</span>, impute <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">fit</span><span class="op">$</span><span class="va">v0s</span>  <span class="co"># the default ladder, make_v0_ladder(lambda1 = 1)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.10000000 0.03162278 0.01000000</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Spike-and-Slab Joint Graphical Lasso (SSJGL)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Groups (K): 2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Variables (p): 10</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   v0 ladder steps: 3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Total EM iterations: 25</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Total time: 0.3 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Group 1: 11 non-zero edges (from precision)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Group 2: 11 non-zero edges (from precision)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Edges with P(inclusion) &gt; 0.5: 11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Total EM iterations: 42</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Total time: 0.5 seconds</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Group 1: 12 non-zero edges (from precision)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Group 2: 12 non-zero edges (from precision)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Edges with P(inclusion) &gt; 0.5: 12</span>
 <span class="r-in"><span><span class="va">adj</span> <span class="op">&lt;-</span> <span class="fu"><a href="extract_adjacency.html">extract_adjacency</a></span><span class="op">(</span><span class="va">fit</span>, threshold <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">adj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/lower.tri.html" class="external-link">upper.tri</a></span><span class="op">(</span><span class="va">adj</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>  <span class="co"># estimated edge count</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 12</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

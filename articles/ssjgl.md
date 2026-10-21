@@ -54,69 +54,56 @@ image(sim$adj_list[[2]], main = "True Graph: Group 2",
 ## Choosing hyperparameters
 
 SSJGL has three penalty parameters (`lambda0`, `lambda1`, `lambda2`) and
-a spike variance parameter `v0`. Understanding how to set these is key
-to getting good results.
+a ladder of spike variances `v0s`.
+
+### Standardise the data
+
+The priors act on the entries of the precision matrices, so their
+meaning depends on the variables’ units. Use `standardize = TRUE`, which
+centres and scales every variable to unit variance within each group.
+The estimates are then precision matrices of the standardised variables.
+(`normalize = TRUE` only centres the data and does not change the
+estimates.)
 
 ### Lambda parameters
 
 The spike-and-slab E-step produces adaptive, edge-specific penalty
-weights that multiply the base `lambda1` and `lambda2` values. This
-means the method is **relatively insensitive to the absolute values** of
-lambda1 and lambda2 (Li et al., 2019) — the adaptive weights compensate.
-What matters most is:
+weights that multiply `lambda1` and `lambda2`. With standardised data:
 
-1.  **Scale of lambda1**: Should match the scale of your data.
-    - **Normalized data** (`normalize = TRUE`): use `lambda1 = 0.01` to
-      `0.1`
-    - **Raw data**: use `lambda1 = 0.5` to `1`
-2.  **Ratio lambda2/lambda1**: Controls the balance between within-group
-    sparsity and cross-group similarity.
-    - `lambda2 = 0`: No borrowing across groups (separate estimation)
-    - `lambda2 = lambda1`: Equal weight on sparsity and similarity
-    - `lambda2 > lambda1`: Encourage more similar graphs across groups
-3.  **lambda0**: Diagonal penalty. Use `lambda0 = 1` (the method is
-    insensitive to this choice).
+1.  **lambda1 = 1** (as in Li et al., 2019). `lambda1` and `v0` act
+    together through the ratio `lambda1/v0` (see below).
 
-### Understanding v0: the spike variance
+2.  **lambda2** controls the cross-group similarity penalty.
 
-The spike variance `v0` is the key model parameter. In the
-spike-and-slab prior, each off-diagonal precision matrix entry is drawn
-from either:
+    - `lambda2 = 0`: no borrowing across groups (separate estimation)
+    - `lambda2 = lambda1`: equal weight on sparsity and similarity
+    - `lambda2 > lambda1`: encourage more similar graphs across groups
 
-- **Spike**: N(0, v0) — this edge is noise
-- **Slab**: N(0, v1 = 1) — this edge is real
+3.  **lambda0**: diagonal penalty. Use `lambda0 = 1` (the method is
+    insensitive to it).
 
-The spike standard deviation `sqrt(v0)` sets the scale below which
-partial correlations are treated as noise. For normalized data, partial
-correlations live in \[-1, 1\], so:
+### Understanding v0: the spike
 
-- `v0 = 0.1` (spike SD = 0.32): weak sparsity, broad spike
-- **`v0 = 0.01` (spike SD = 0.10): moderate sparsity — good default**
-- `v0 = 0.001` (spike SD = 0.03): aggressive sparsity
-- `v0 = 0.0001` (spike SD = 0.01): very aggressive, may over-sparsify
-
-With `v0 = 0.01`, the model treats edges with magnitude below ~0.1 as
-noise and edges above ~0.2 as signal, with the posterior probability
-smoothly interpolating in between. This produces well-calibrated
-posterior probabilities for edge discovery.
+Each off-diagonal precision entry has a **Laplace** prior: rate
+`lambda1/v0` in the spike (the edge is absent) and `lambda1/v1` in the
+slab (the edge is present, `v1 = 1`). The spike’s scale is therefore
+`v0/lambda1`, and only the ratio `lambda1/v0` matters. Larger
+`lambda1/v0` means stronger shrinkage of non-edges. In the M-step, a
+spike edge is soft-thresholded at roughly `lambda1/(n v0)` on the
+correlation scale.
 
 ### The v0 ladder (warm-starting)
 
-The default `v0s = c(0.1, 0.03, 0.01)` provides a short warm-start
-sequence: the EM starts at `v0 = 0.1` (smooth landscape, easier
-optimization) and anneals to the target `v0 = 0.01`. This helps the EM
-avoid local optima without running unnecessary extra steps.
-
-For parameter exploration and diagnostics,
-[`make_v0_ladder()`](https://mljaniczek.github.io/spikeyglass/reference/make_v0_ladder.md)
-generates longer ladders — see
-[`vignette("parameter-exploration")`](https://mljaniczek.github.io/spikeyglass/articles/parameter-exploration.md)
-for details.
+The EM is run along a **decreasing** ladder of `v0` (increasing
+`lambda1/v0`), each step warm-started from the previous one (“dynamic
+posterior exploration”, Li et al., 2019). The default,
+`v0s = make_v0_ladder(lambda1)`, has three steps with
+`lambda1/v0 = 10, 31.6, 100`, which is `c(0.1, 0.0316, 0.01)` at
+`lambda1 = 1`. It was chosen by the simulation study summarised in
+[`vignette("parameter-exploration")`](https://mljaniczek.github.io/spikeyglass/articles/parameter-exploration.md).
+That vignette also shows how to explore longer ladders.
 
 ## Fit the model
-
-We use `normalize = TRUE` (data is not pre-standardized),
-`lambda1 = 0.5`, `lambda2 = 0.5`, and a short v0 ladder:
 
 ``` r
 
@@ -124,17 +111,23 @@ fit <- ssjgl(
   Y = sim$data_list,
   penalty = "fused",
   lambda0 = 1,
-  lambda1 = 0.5,
-  lambda2 = 0.5,
-  v1 = 1,
-  v0s = c(0.1, 0.03, 0.01),
+  lambda1 = 1,
+  lambda2 = 1,
   doubly = TRUE,
   a = 1, b = 15,
   maxitr.em = 100,
   tol.em = 1e-4,
-  normalize = TRUE,
+  standardize = TRUE,
   impute = FALSE
 )
+```
+
+The fitted object records its settings, e.g. the ladder that was used:
+
+``` r
+
+fit$v0s
+#> [1] 0.10000000 0.03162278 0.01000000
 ```
 
 ``` r
@@ -144,10 +137,10 @@ print(fit)
 #>   Groups (K): 2
 #>   Variables (p): 15
 #>   v0 ladder steps: 3
-#>   Total EM iterations: 40
-#>   Total time: 0.9 seconds
+#>   Total EM iterations: 37
+#>   Total time: 0.8 seconds
 #>   Group 1: 30 non-zero edges (from precision)
-#>   Group 2: 32 non-zero edges (from precision)
+#>   Group 2: 31 non-zero edges (from precision)
 #>   Edges with P(inclusion) > 0.5: 32
 ```
 
@@ -195,7 +188,7 @@ cat(sprintf("Mean TPR: %.3f\n", metrics$overall$mean_TPR))
 cat(sprintf("Mean FPR: %.3f\n", metrics$overall$mean_FPR))
 #> Mean FPR: 0.065
 cat(sprintf("Mean AUC: %.3f\n", metrics$overall$mean_AUC))
-#> Mean AUC: 0.953
+#> Mean AUC: 0.934
 
 for (k in 1:2) {
   cat(sprintf("\n--- Group %d ---\n", k))
@@ -208,12 +201,12 @@ for (k in 1:2) {
 #> --- Group 1 ---
 #>   TP=25, FP=7, TN=71, FN=2
 #>   TPR=0.926, FPR=0.090, F1=0.847
-#>   Frobenius norm: 1.080
+#>   Frobenius norm: 2.240
 #> 
 #> --- Group 2 ---
 #>   TP=29, FP=3, TN=71, FN=2
 #>   TPR=0.935, FPR=0.041, F1=0.921
-#>   Frobenius norm: 1.162
+#>   Frobenius norm: 4.708
 ```
 
 ### ROC curve
@@ -225,6 +218,85 @@ plot_roc(metrics$roc[[1]], main = "ROC Curve (Group 1)")
 
 ![](ssjgl_files/figure-html/roc-1.png)
 
+## Differential edges
+
+[`diff_edges()`](https://mljaniczek.github.io/spikeyglass/reference/diff_edges.md)
+tests which edges differ between two groups. With
+`method = "permutation"` (the default) it pools the rows of the two
+groups, shuffles the group labels `B` times, and refits
+[`ssjgl()`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md)
+with the settings stored in the fit. The null scores \|Δ\| are pooled
+across all edges and permutations, and the resulting p-values are
+adjusted by Benjamini-Hochberg. Here Δ is the difference in partial
+correlations, group 1 minus group 2. `method = "bootstrap"` gives
+percentile intervals for Δ instead.
+
+Each refit repeats the whole v0 ladder, so this is the slow step. If the
+**future.apply** package is installed, the refits run in parallel under
+any
+[`future::plan()`](https://future.futureverse.org/reference/plan.html),
+e.g. `future::plan(future::multisession, workers = 4)`. Results depend
+only on [`set.seed()`](https://rdrr.io/r/base/Random.html), not on the
+plan.
+
+``` r
+
+set.seed(1)
+de <- diff_edges(fit, Y = sim$data_list, B = 20)
+de
+#> <ssjgl_diff_edges>
+#>   group 1 vs group 2, pcor scale, permutation (B = 20), v0 step 3
+#>   12 of 105 edges selected at BH-adjusted p < 0.05
+#>   i  j node1 node2   est_g1 est_g2   diff   pvalue   p_adj selected
+#>   4  5    V4    V5  0.29123 -0.328  0.619 0.000476 0.00555     TRUE
+#>   3  4    V3    V4  0.29342 -0.314  0.607 0.000476 0.00555     TRUE
+#>   9 10    V9   V10 -0.37791  0.207 -0.585 0.000476 0.00555     TRUE
+#>  11 13   V11   V13  0.18953 -0.379  0.568 0.000476 0.00555     TRUE
+#>  12 13   V12   V13 -0.24371  0.305 -0.549 0.000476 0.00555     TRUE
+#>   9 11    V9   V11 -0.23151  0.279 -0.510 0.000476 0.00555     TRUE
+#>  14 15   V14   V15 -0.17495  0.235 -0.410 0.000476 0.00555     TRUE
+#>   3 13    V3   V13 -0.02633  0.328 -0.354 0.000476 0.00555     TRUE
+#>   7  9    V7    V9  0.35160  0.000  0.352 0.000476 0.00555     TRUE
+#>   3 11    V3   V11  0.00814  0.299 -0.290 0.002380 0.02499     TRUE
+#>  prob_dissimilar
+#>                1
+#>                1
+#>                1
+#>                1
+#>                1
+#>                1
+#>                1
+#>                1
+#>                1
+#>                1
+#>   ... and 2 more
+```
+
+The result is a data frame with one row per edge (`i`, `j`, `node1`,
+`node2`, `est_g1`, `est_g2`, `diff`, `pvalue`, `p_adj`, `selected`).
+Where the concepts match, the column names are those used by multiGGMr’s
+`diff_summary()`/`select_diff_edges()`. The plot shows the selected
+edges, coloured by direction, and the group 1 vs group 2 partial
+correlations:
+
+``` r
+
+plot(de)
+```
+
+![](ssjgl_files/figure-html/diff_edges_plot-1.png)
+
+Because this fit uses `doubly = TRUE`, the table also has
+`prob_dissimilar`, the EM’s P(ξ = 1) for each edge. It indicates that
+the edge is only weakly shrunk towards equality across groups. It is not
+a calibrated probability that the edge differs, and in real data it can
+be close to 1 for every included edge. Use the permutation p-values for
+inference.
+
+`B = 20` keeps this vignette fast. Use `B = 100` or more in practice:
+with pooled nulls the smallest attainable p-value is about 1 / (B ×
+number of edges), but BH needs enough permutations to be stable.
+
 ## Select v0 via cross-validation
 
 For real data where the truth is unknown, use cross-validation to select
@@ -233,16 +305,15 @@ Gaussian negative log-likelihood:
 
 ``` r
 
-v0s_cv <- make_v0_ladder(lambda1 = 0.5, n_steps = 8)
+v0s_cv <- make_v0_ladder(lambda1 = 1, n_steps = 8, min_ratio = 5, max_ratio = 500)
 
 cv_res <- SSJGL_select_v0_cv(
-  Y = sim$data_list,
+  Y = lapply(sim$data_list, scale),
   v0s = v0s_cv,
   folds = 3,
   penalty = "fused",
-  lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
-  maxitr.em = 50, maxitr.jgl = 50,
-  normalize = TRUE
+  lambda0 = 1, lambda1 = 1, lambda2 = 1,
+  maxitr.em = 50, maxitr.jgl = 50
 )
 cat("Best v0:", cv_res$v0_best, "\n")
 ```
@@ -255,13 +326,12 @@ intervals for partial correlations at a given v0:
 ``` r
 
 boot_res <- SSJGL_final_with_pcor_CI(
-  Y = sim$data_list,
+  Y = lapply(sim$data_list, scale),
   v0_best = 0.01,
   B = 50,
   ci_level = 0.95,
   penalty = "fused",
-  lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
-  normalize = TRUE
+  lambda0 = 1, lambda1 = 1, lambda2 = 1
 )
 
 # Partial correlation point estimate for group 1
@@ -282,26 +352,27 @@ cat("Significant edges (Group 1):",
 
 | Parameter | Role | Guidance |
 |----|----|----|
+| `standardize` | Centre and scale each variable | `TRUE` unless variables share a meaningful scale |
 | `lambda0` | Diagonal penalty | Use 1 (insensitive) |
-| `lambda1` | Edge sparsity | 0.01–0.1 (normalized), 0.5–1 (raw) |
-| `lambda2` | Cross-group similarity | Same scale as lambda1; ratio controls borrowing |
-| `v0s` | Spike variance ladder | `c(0.1, 0.03, 0.01)` for routine use |
+| `lambda1` | Edge sparsity (with `v0`) | 1 with standardised data |
+| `lambda2` | Cross-group similarity | 0 (separate) to `lambda1` or more (more borrowing) |
+| `v0s` | Spike ladder; spike rate `lambda1/v0` | Default `make_v0_ladder(lambda1)`: `lambda1/v0` = 10, 31.6, 100 |
 | `v1` | Slab variance | Leave at 1 |
-| `a, b` | Beta prior for pi | `a = 1, b = p` for sparse prior |
+| `a, b` | Beta prior for pi | `a = 1, b = p` for a sparse prior |
 | `doubly` | Doubly spike-and-slab | TRUE recommended for multi-group |
-| `normalize` | Mean-center variables | TRUE unless data is pre-standardized |
 
 **Recommended workflow:**
 
-1.  Set `lambda0 = 1`, choose `lambda1` based on data scale
-2.  Set `lambda2 = lambda1` as starting point (adjust ratio for
-    more/less cross-group similarity)
-3.  Use the default `v0s = c(0.1, 0.03, 0.01)` (short warm-start to
-    target v0 = 0.01)
-4.  Select edges by thresholding posterior probabilities at 0.5
-5.  For real data: use
+1.  Fit with `standardize = TRUE`, `lambda0 = 1`, `lambda1 = 1`.
+2.  Set `lambda2 = lambda1` as a starting point, and adjust it for more
+    or less cross-group similarity.
+3.  Keep the default ladder (`v0s` not given). Check with
+    [`plot_stability()`](https://mljaniczek.github.io/spikeyglass/reference/plot_stability.md)
+    on a longer ladder if in doubt.
+4.  Select edges by thresholding posterior probabilities at 0.5.
+5.  For real data, use
     [`SSJGL_select_v0_cv()`](https://mljaniczek.github.io/spikeyglass/reference/SSJGL_select_v0_cv.md)
-    to validate the v0 choice, or bootstrap CIs for edge-level inference
+    to check the v0 choice, or bootstrap CIs for edge-level inference.
 
 ## References
 

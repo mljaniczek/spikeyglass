@@ -50,11 +50,16 @@ A list with elements:
 - roc:
 
   List of K ROC objects (from
-  [`roc_auc`](https://mljaniczek.github.io/spikeyglass/reference/roc_auc.md)).
+  [`roc_auc`](https://rdrr.io/pkg/ggmtools/man/roc_auc.html)).
 
 - overall:
 
   Named list with mean TPR, mean FPR, mean AUC across groups.
+
+## Details
+
+The edge indicator in SSJGL is shared by all groups, so every group is
+scored with the same PIP matrix (against its own true graph).
 
 ## Examples
 
@@ -63,7 +68,6 @@ sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
 fit <- ssjgl(sim$data_list, penalty = "fused",
              lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
              v0s = 0.01, maxitr.em = 10, impute = FALSE)
-#> Ladder= 1 v0 = 0.01 done. Time: 0
 m <- compute_metrics(fit, sim$adj_list, sim$Omega_list)
 m$overall
 #> $mean_TPR

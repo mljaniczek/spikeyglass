@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">spikeyglass</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mljaniczek/spikeyglass/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -59,7 +60,7 @@
       <h1>Using spike-and-slab joint graphical lasso</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/mljaniczek/spikeyglass/blob/main/vignettes/ssjgl.Rmd" class="external-link"><code>vignettes/ssjgl.Rmd</code></a></small>
       <div class="d-none name"><code>ssjgl.Rmd</code></div>
     </div>
 
@@ -124,137 +125,111 @@ variables using a banded (AR-2) graph with a few differential edges.</p>
 <h2 id="choosing-hyperparameters">Choosing hyperparameters<a class="anchor" aria-label="anchor" href="#choosing-hyperparameters"></a>
 </h2>
 <p>SSJGL has three penalty parameters (<code>lambda0</code>,
-<code>lambda1</code>, <code>lambda2</code>) and a spike variance
-parameter <code>v0</code>. Understanding how to set these is key to
-getting good results.</p>
+<code>lambda1</code>, <code>lambda2</code>) and a ladder of spike
+variances <code>v0s</code>.</p>
+<div class="section level3">
+<h3 id="standardise-the-data">Standardise the data<a class="anchor" aria-label="anchor" href="#standardise-the-data"></a>
+</h3>
+<p>The priors act on the entries of the precision matrices, so their
+meaning depends on the variables’ units. Use
+<code>standardize = TRUE</code>, which centres and scales every variable
+to unit variance within each group. The estimates are then precision
+matrices of the standardised variables. (<code>normalize = TRUE</code>
+only centres the data and does not change the estimates.)</p>
+</div>
 <div class="section level3">
 <h3 id="lambda-parameters">Lambda parameters<a class="anchor" aria-label="anchor" href="#lambda-parameters"></a>
 </h3>
 <p>The spike-and-slab E-step produces adaptive, edge-specific penalty
-weights that multiply the base <code>lambda1</code> and
-<code>lambda2</code> values. This means the method is <strong>relatively
-insensitive to the absolute values</strong> of lambda1 and lambda2 (Li
-et al., 2019) — the adaptive weights compensate. What matters most
-is:</p>
+weights that multiply <code>lambda1</code> and <code>lambda2</code>.
+With standardised data:</p>
 <ol style="list-style-type: decimal">
+<li><p><strong>lambda1 = 1</strong> (as in Li et al., 2019).
+<code>lambda1</code> and <code>v0</code> act together through the ratio
+<code>lambda1/v0</code> (see below).</p></li>
 <li>
-<strong>Scale of lambda1</strong>: Should match the scale of your
-data.
+<p><strong>lambda2</strong> controls the cross-group similarity
+penalty.</p>
 <ul>
 <li>
-<strong>Normalized data</strong> (<code>normalize = TRUE</code>):
-use <code>lambda1 = 0.01</code> to <code>0.1</code>
-</li>
-<li>
-<strong>Raw data</strong>: use <code>lambda1 = 0.5</code> to
-<code>1</code>
-</li>
-</ul>
-</li>
-<li>
-<strong>Ratio lambda2/lambda1</strong>: Controls the balance between
-within-group sparsity and cross-group similarity.
-<ul>
-<li>
-<code>lambda2 = 0</code>: No borrowing across groups (separate
+<code>lambda2 = 0</code>: no borrowing across groups (separate
 estimation)</li>
 <li>
-<code>lambda2 = lambda1</code>: Equal weight on sparsity and
+<code>lambda2 = lambda1</code>: equal weight on sparsity and
 similarity</li>
 <li>
-<code>lambda2 &gt; lambda1</code>: Encourage more similar graphs
+<code>lambda2 &gt; lambda1</code>: encourage more similar graphs
 across groups</li>
 </ul>
 </li>
-<li>
-<strong>lambda0</strong>: Diagonal penalty. Use
-<code>lambda0 = 1</code> (the method is insensitive to this
-choice).</li>
+<li><p><strong>lambda0</strong>: diagonal penalty. Use
+<code>lambda0 = 1</code> (the method is insensitive to it).</p></li>
 </ol>
 </div>
 <div class="section level3">
-<h3 id="understanding-v0-the-spike-variance">Understanding v0: the spike variance<a class="anchor" aria-label="anchor" href="#understanding-v0-the-spike-variance"></a>
+<h3 id="understanding-v0-the-spike">Understanding v0: the spike<a class="anchor" aria-label="anchor" href="#understanding-v0-the-spike"></a>
 </h3>
-<p>The spike variance <code>v0</code> is the key model parameter. In the
-spike-and-slab prior, each off-diagonal precision matrix entry is drawn
-from either:</p>
-<ul>
-<li>
-<strong>Spike</strong>: N(0, v0) — this edge is noise</li>
-<li>
-<strong>Slab</strong>: N(0, v1 = 1) — this edge is real</li>
-</ul>
-<p>The spike standard deviation <code>sqrt(v0)</code> sets the scale
-below which partial correlations are treated as noise. For normalized
-data, partial correlations live in [-1, 1], so:</p>
-<ul>
-<li>
-<code>v0 = 0.1</code> (spike SD = 0.32): weak sparsity, broad
-spike</li>
-<li><strong><code>v0 = 0.01</code> (spike SD = 0.10): moderate sparsity
-— good default</strong></li>
-<li>
-<code>v0 = 0.001</code> (spike SD = 0.03): aggressive sparsity</li>
-<li>
-<code>v0 = 0.0001</code> (spike SD = 0.01): very aggressive, may
-over-sparsify</li>
-</ul>
-<p>With <code>v0 = 0.01</code>, the model treats edges with magnitude
-below ~0.1 as noise and edges above ~0.2 as signal, with the posterior
-probability smoothly interpolating in between. This produces
-well-calibrated posterior probabilities for edge discovery.</p>
+<p>Each off-diagonal precision entry has a <strong>Laplace</strong>
+prior: rate <code>lambda1/v0</code> in the spike (the edge is absent)
+and <code>lambda1/v1</code> in the slab (the edge is present,
+<code>v1 = 1</code>). The spike’s scale is therefore
+<code>v0/lambda1</code>, and only the ratio <code>lambda1/v0</code>
+matters. Larger <code>lambda1/v0</code> means stronger shrinkage of
+non-edges. In the M-step, a spike edge is soft-thresholded at roughly
+<code>lambda1/(n v0)</code> on the correlation scale.</p>
 </div>
 <div class="section level3">
 <h3 id="the-v0-ladder-warm-starting">The v0 ladder (warm-starting)<a class="anchor" aria-label="anchor" href="#the-v0-ladder-warm-starting"></a>
 </h3>
-<p>The default <code>v0s = c(0.1, 0.03, 0.01)</code> provides a short
-warm-start sequence: the EM starts at <code>v0 = 0.1</code> (smooth
-landscape, easier optimization) and anneals to the target
-<code>v0 = 0.01</code>. This helps the EM avoid local optima without
-running unnecessary extra steps.</p>
-<p>For parameter exploration and diagnostics,
-<code><a href="../reference/make_v0_ladder.html">make_v0_ladder()</a></code> generates longer ladders — see
-<code><a href="../articles/parameter-exploration.html">vignette("parameter-exploration")</a></code> for details.</p>
+<p>The EM is run along a <strong>decreasing</strong> ladder of
+<code>v0</code> (increasing <code>lambda1/v0</code>), each step
+warm-started from the previous one (“dynamic posterior exploration”, Li
+et al., 2019). The default, <code>v0s = make_v0_ladder(lambda1)</code>,
+has three steps with <code>lambda1/v0 = 10, 31.6, 100</code>, which is
+<code>c(0.1, 0.0316, 0.01)</code> at <code>lambda1 = 1</code>. It was
+chosen by the simulation study summarised in
+<code><a href="../articles/parameter-exploration.html">vignette("parameter-exploration")</a></code>. That vignette also shows
+how to explore longer ladders.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="fit-the-model">Fit the model<a class="anchor" aria-label="anchor" href="#fit-the-model"></a>
 </h2>
-<p>We use <code>normalize = TRUE</code> (data is not pre-standardized),
-<code>lambda1 = 0.5</code>, <code>lambda2 = 0.5</code>, and a short v0
-ladder:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ssjgl.html">ssjgl</a></span><span class="op">(</span></span>
 <span>  Y <span class="op">=</span> <span class="va">sim</span><span class="op">$</span><span class="va">data_list</span>,</span>
 <span>  penalty <span class="op">=</span> <span class="st">"fused"</span>,</span>
 <span>  lambda0 <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  lambda1 <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  lambda2 <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  v1 <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  v0s <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.03</span>, <span class="fl">0.01</span><span class="op">)</span>,</span>
+<span>  lambda1 <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  lambda2 <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  doubly <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  a <span class="op">=</span> <span class="fl">1</span>, b <span class="op">=</span> <span class="fl">15</span>,</span>
 <span>  maxitr.em <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  tol.em <span class="op">=</span> <span class="fl">1e-4</span>,</span>
-<span>  normalize <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  standardize <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  impute <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>The fitted object records its settings, e.g. the ladder that was
+used:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">v0s</span></span>
+<span><span class="co">#&gt; [1] 0.10000000 0.03162278 0.01000000</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Spike-and-Slab Joint Graphical Lasso (SSJGL)</span></span>
 <span><span class="co">#&gt;   Groups (K): 2</span></span>
 <span><span class="co">#&gt;   Variables (p): 15</span></span>
 <span><span class="co">#&gt;   v0 ladder steps: 3</span></span>
-<span><span class="co">#&gt;   Total EM iterations: 40</span></span>
-<span><span class="co">#&gt;   Total time: 0.9 seconds</span></span>
+<span><span class="co">#&gt;   Total EM iterations: 37</span></span>
+<span><span class="co">#&gt;   Total time: 0.8 seconds</span></span>
 <span><span class="co">#&gt;   Group 1: 30 non-zero edges (from precision)</span></span>
-<span><span class="co">#&gt;   Group 2: 32 non-zero edges (from precision)</span></span>
+<span><span class="co">#&gt;   Group 2: 31 non-zero edges (from precision)</span></span>
 <span><span class="co">#&gt;   Edges with P(inclusion) &gt; 0.5: 32</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="extract-results">Extract results<a class="anchor" aria-label="anchor" href="#extract-results"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Precision matrices at the final v0 step</span></span>
 <span><span class="va">theta_hat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span></span>
@@ -279,7 +254,7 @@ ladder:</p>
 </h2>
 <p>Compare the estimated graphs to the truth using TPR, FPR, and
 AUC:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metrics</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_metrics.html">compute_metrics</a></span><span class="op">(</span></span>
 <span>  fit <span class="op">=</span> <span class="va">fit</span>,</span>
 <span>  true_adj <span class="op">=</span> <span class="va">sim</span><span class="op">$</span><span class="va">adj_list</span>,</span>
@@ -294,7 +269,7 @@ AUC:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Mean FPR: %.3f\n"</span>, <span class="va">metrics</span><span class="op">$</span><span class="va">overall</span><span class="op">$</span><span class="va">mean_FPR</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Mean FPR: 0.065</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Mean AUC: %.3f\n"</span>, <span class="va">metrics</span><span class="op">$</span><span class="va">overall</span><span class="op">$</span><span class="va">mean_AUC</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Mean AUC: 0.953</span></span>
+<span><span class="co">#&gt; Mean AUC: 0.934</span></span>
 <span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">k</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"\n--- Group %d ---\n"</span>, <span class="va">k</span><span class="op">)</span><span class="op">)</span></span>
@@ -307,19 +282,88 @@ AUC:</p>
 <span><span class="co">#&gt; --- Group 1 ---</span></span>
 <span><span class="co">#&gt;   TP=25, FP=7, TN=71, FN=2</span></span>
 <span><span class="co">#&gt;   TPR=0.926, FPR=0.090, F1=0.847</span></span>
-<span><span class="co">#&gt;   Frobenius norm: 1.080</span></span>
+<span><span class="co">#&gt;   Frobenius norm: 2.240</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; --- Group 2 ---</span></span>
 <span><span class="co">#&gt;   TP=29, FP=3, TN=71, FN=2</span></span>
 <span><span class="co">#&gt;   TPR=0.935, FPR=0.041, F1=0.921</span></span>
-<span><span class="co">#&gt;   Frobenius norm: 1.162</span></span></code></pre></div>
+<span><span class="co">#&gt;   Frobenius norm: 4.708</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="roc-curve">ROC curve<a class="anchor" aria-label="anchor" href="#roc-curve"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_roc.html">plot_roc</a></span><span class="op">(</span><span class="va">metrics</span><span class="op">$</span><span class="va">roc</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"ROC Curve (Group 1)"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/ggmtools/man/plot_roc.html" class="external-link">plot_roc</a></span><span class="op">(</span><span class="va">metrics</span><span class="op">$</span><span class="va">roc</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, main <span class="op">=</span> <span class="st">"ROC Curve (Group 1)"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ssjgl_files/figure-html/roc-1.png" class="r-plt" alt="" width="480"></p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="differential-edges">Differential edges<a class="anchor" aria-label="anchor" href="#differential-edges"></a>
+</h2>
+<p><code><a href="../reference/diff_edges.html">diff_edges()</a></code> tests which edges differ between two
+groups. With <code>method = "permutation"</code> (the default) it pools
+the rows of the two groups, shuffles the group labels <code>B</code>
+times, and refits <code><a href="../reference/ssjgl.html">ssjgl()</a></code> with the settings stored in the
+fit. The null scores |Δ| are pooled across all edges and permutations,
+and the resulting p-values are adjusted by Benjamini-Hochberg. Here Δ is
+the difference in partial correlations, group 1 minus group 2.
+<code>method = "bootstrap"</code> gives percentile intervals for Δ
+instead.</p>
+<p>Each refit repeats the whole v0 ladder, so this is the slow step. If
+the <strong>future.apply</strong> package is installed, the refits run
+in parallel under any <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>,
+e.g. <code>future::plan(future::multisession, workers = 4)</code>.
+Results depend only on <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>, not on the plan.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">de</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/diff_edges.html">diff_edges</a></span><span class="op">(</span><span class="va">fit</span>, Y <span class="op">=</span> <span class="va">sim</span><span class="op">$</span><span class="va">data_list</span>, B <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">de</span></span>
+<span><span class="co">#&gt; &lt;ssjgl_diff_edges&gt;</span></span>
+<span><span class="co">#&gt;   group 1 vs group 2, pcor scale, permutation (B = 20), v0 step 3</span></span>
+<span><span class="co">#&gt;   12 of 105 edges selected at BH-adjusted p &lt; 0.05</span></span>
+<span><span class="co">#&gt;   i  j node1 node2   est_g1 est_g2   diff   pvalue   p_adj selected</span></span>
+<span><span class="co">#&gt;   4  5    V4    V5  0.29123 -0.328  0.619 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   3  4    V3    V4  0.29342 -0.314  0.607 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   9 10    V9   V10 -0.37791  0.207 -0.585 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;  11 13   V11   V13  0.18953 -0.379  0.568 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;  12 13   V12   V13 -0.24371  0.305 -0.549 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   9 11    V9   V11 -0.23151  0.279 -0.510 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;  14 15   V14   V15 -0.17495  0.235 -0.410 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   3 13    V3   V13 -0.02633  0.328 -0.354 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   7  9    V7    V9  0.35160  0.000  0.352 0.000476 0.00555     TRUE</span></span>
+<span><span class="co">#&gt;   3 11    V3   V11  0.00814  0.299 -0.290 0.002380 0.02499     TRUE</span></span>
+<span><span class="co">#&gt;  prob_dissimilar</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;                1</span></span>
+<span><span class="co">#&gt;   ... and 2 more</span></span></code></pre></div>
+<p>The result is a data frame with one row per edge (<code>i</code>,
+<code>j</code>, <code>node1</code>, <code>node2</code>,
+<code>est_g1</code>, <code>est_g2</code>, <code>diff</code>,
+<code>pvalue</code>, <code>p_adj</code>, <code>selected</code>). Where
+the concepts match, the column names are those used by multiGGMr’s
+<code>diff_summary()</code>/<code>select_diff_edges()</code>. The plot
+shows the selected edges, coloured by direction, and the group 1 vs
+group 2 partial correlations:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">de</span><span class="op">)</span></span></code></pre></div>
+<p><img src="ssjgl_files/figure-html/diff_edges_plot-1.png" class="r-plt" alt="" width="672"></p>
+<p>Because this fit uses <code>doubly = TRUE</code>, the table also has
+<code>prob_dissimilar</code>, the EM’s P(ξ = 1) for each edge. It
+indicates that the edge is only weakly shrunk towards equality across
+groups. It is not a calibrated probability that the edge differs, and in
+real data it can be close to 1 for every included edge. Use the
+permutation p-values for inference.</p>
+<p><code>B = 20</code> keeps this vignette fast. Use
+<code>B = 100</code> or more in practice: with pooled nulls the smallest
+attainable p-value is about 1 / (B × number of edges), but BH needs
+enough permutations to be stable.</p>
 </div>
 <div class="section level2">
 <h2 id="select-v0-via-cross-validation">Select v0 via cross-validation<a class="anchor" aria-label="anchor" href="#select-v0-via-cross-validation"></a>
@@ -327,17 +371,16 @@ AUC:</p>
 <p>For real data where the truth is unknown, use cross-validation to
 select the best v0. This evaluates each v0 independently using held-out
 Gaussian negative log-likelihood:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">v0s_cv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_v0_ladder.html">make_v0_ladder</a></span><span class="op">(</span>lambda1 <span class="op">=</span> <span class="fl">0.5</span>, n_steps <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">v0s_cv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_v0_ladder.html">make_v0_ladder</a></span><span class="op">(</span>lambda1 <span class="op">=</span> <span class="fl">1</span>, n_steps <span class="op">=</span> <span class="fl">8</span>, min_ratio <span class="op">=</span> <span class="fl">5</span>, max_ratio <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cv_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/SSJGL_select_v0_cv.html">SSJGL_select_v0_cv</a></span><span class="op">(</span></span>
-<span>  Y <span class="op">=</span> <span class="va">sim</span><span class="op">$</span><span class="va">data_list</span>,</span>
+<span>  Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">sim</span><span class="op">$</span><span class="va">data_list</span>, <span class="va">scale</span><span class="op">)</span>,</span>
 <span>  v0s <span class="op">=</span> <span class="va">v0s_cv</span>,</span>
 <span>  folds <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  penalty <span class="op">=</span> <span class="st">"fused"</span>,</span>
-<span>  lambda0 <span class="op">=</span> <span class="fl">1</span>, lambda1 <span class="op">=</span> <span class="fl">0.5</span>, lambda2 <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  maxitr.em <span class="op">=</span> <span class="fl">50</span>, maxitr.jgl <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  normalize <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  lambda0 <span class="op">=</span> <span class="fl">1</span>, lambda1 <span class="op">=</span> <span class="fl">1</span>, lambda2 <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  maxitr.em <span class="op">=</span> <span class="fl">50</span>, maxitr.jgl <span class="op">=</span> <span class="fl">50</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Best v0:"</span>, <span class="va">cv_res</span><span class="op">$</span><span class="va">v0_best</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -346,15 +389,14 @@ Gaussian negative log-likelihood:</p>
 </h2>
 <p>The <code>SSJGL_final_with_pcor_CI</code> function computes bootstrap
 confidence intervals for partial correlations at a given v0:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">boot_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/SSJGL_final_with_pcor_CI.html">SSJGL_final_with_pcor_CI</a></span><span class="op">(</span></span>
-<span>  Y <span class="op">=</span> <span class="va">sim</span><span class="op">$</span><span class="va">data_list</span>,</span>
+<span>  Y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">sim</span><span class="op">$</span><span class="va">data_list</span>, <span class="va">scale</span><span class="op">)</span>,</span>
 <span>  v0_best <span class="op">=</span> <span class="fl">0.01</span>,</span>
 <span>  B <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  ci_level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  penalty <span class="op">=</span> <span class="st">"fused"</span>,</span>
-<span>  lambda0 <span class="op">=</span> <span class="fl">1</span>, lambda1 <span class="op">=</span> <span class="fl">0.5</span>, lambda2 <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  normalize <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  lambda0 <span class="op">=</span> <span class="fl">1</span>, lambda1 <span class="op">=</span> <span class="fl">1</span>, lambda2 <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Partial correlation point estimate for group 1</span></span>
@@ -386,60 +428,62 @@ confidence intervals for partial correlations at a given v0:</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
+<td><code>standardize</code></td>
+<td>Centre and scale each variable</td>
+<td>
+<code>TRUE</code> unless variables share a meaningful scale</td>
+</tr>
+<tr class="even">
 <td><code>lambda0</code></td>
 <td>Diagonal penalty</td>
 <td>Use 1 (insensitive)</td>
 </tr>
-<tr class="even">
-<td><code>lambda1</code></td>
-<td>Edge sparsity</td>
-<td>0.01–0.1 (normalized), 0.5–1 (raw)</td>
-</tr>
 <tr class="odd">
+<td><code>lambda1</code></td>
+<td>Edge sparsity (with <code>v0</code>)</td>
+<td>1 with standardised data</td>
+</tr>
+<tr class="even">
 <td><code>lambda2</code></td>
 <td>Cross-group similarity</td>
-<td>Same scale as lambda1; ratio controls borrowing</td>
-</tr>
-<tr class="even">
-<td><code>v0s</code></td>
-<td>Spike variance ladder</td>
-<td>
-<code>c(0.1, 0.03, 0.01)</code> for routine use</td>
+<td>0 (separate) to <code>lambda1</code> or more (more borrowing)</td>
 </tr>
 <tr class="odd">
+<td><code>v0s</code></td>
+<td>Spike ladder; spike rate <code>lambda1/v0</code>
+</td>
+<td>Default <code>make_v0_ladder(lambda1)</code>:
+<code>lambda1/v0</code> = 10, 31.6, 100</td>
+</tr>
+<tr class="even">
 <td><code>v1</code></td>
 <td>Slab variance</td>
 <td>Leave at 1</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>a, b</code></td>
 <td>Beta prior for pi</td>
 <td>
-<code>a = 1, b = p</code> for sparse prior</td>
+<code>a = 1, b = p</code> for a sparse prior</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>doubly</code></td>
 <td>Doubly spike-and-slab</td>
 <td>TRUE recommended for multi-group</td>
-</tr>
-<tr class="even">
-<td><code>normalize</code></td>
-<td>Mean-center variables</td>
-<td>TRUE unless data is pre-standardized</td>
 </tr>
 </tbody>
 </table>
 <p><strong>Recommended workflow:</strong></p>
 <ol style="list-style-type: decimal">
-<li>Set <code>lambda0 = 1</code>, choose <code>lambda1</code> based on
-data scale</li>
-<li>Set <code>lambda2 = lambda1</code> as starting point (adjust ratio
-for more/less cross-group similarity)</li>
-<li>Use the default <code>v0s = c(0.1, 0.03, 0.01)</code> (short
-warm-start to target v0 = 0.01)</li>
-<li>Select edges by thresholding posterior probabilities at 0.5</li>
-<li>For real data: use <code><a href="../reference/SSJGL_select_v0_cv.html">SSJGL_select_v0_cv()</a></code> to validate the
-v0 choice, or bootstrap CIs for edge-level inference</li>
+<li>Fit with <code>standardize = TRUE</code>, <code>lambda0 = 1</code>,
+<code>lambda1 = 1</code>.</li>
+<li>Set <code>lambda2 = lambda1</code> as a starting point, and adjust
+it for more or less cross-group similarity.</li>
+<li>Keep the default ladder (<code>v0s</code> not given). Check with
+<code><a href="../reference/plot_stability.html">plot_stability()</a></code> on a longer ladder if in doubt.</li>
+<li>Select edges by thresholding posterior probabilities at 0.5.</li>
+<li>For real data, use <code><a href="../reference/SSJGL_select_v0_cv.html">SSJGL_select_v0_cv()</a></code> to check the v0
+choice, or bootstrap CIs for edge-level inference.</li>
 </ol>
 </div>
 <div class="section level2">

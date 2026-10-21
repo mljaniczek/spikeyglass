@@ -37,7 +37,7 @@ SSJGL_CV_final_pcorCI(
   normalize = FALSE,
   c = 0.1,
   impute = TRUE,
-  verbose = TRUE
+  verbose = FALSE
 )
 ```
 
@@ -65,7 +65,11 @@ SSJGL_CV_final_pcorCI(
 
 - seed:
 
-  Integer random seed. Default 1.
+  Integer random seed for the fold/resample assignment. Default
+
+  1.  It is used locally (the previous state is restored on exit), so
+      the caller's random-number stream is left unchanged; `NULL` uses
+      the current stream.
 
 - penalty, lambda0, lambda1, lambda2, v1, doubly, rho, a, b:
 
@@ -90,7 +94,8 @@ SSJGL_CV_final_pcorCI(
 
 - verbose:
 
-  Logical. Default TRUE.
+  Logical. If TRUE, reports progress with
+  [`message()`](https://rdrr.io/r/base/message.html). Default FALSE.
 
 ## Value
 

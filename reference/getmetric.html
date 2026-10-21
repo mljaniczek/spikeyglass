@@ -11,7 +11,7 @@ Kullback-Leibler divergence."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">spikeyglass</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,6 +28,7 @@ Kullback-Leibler divergence."></head><body>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mljaniczek/spikeyglass/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -37,7 +38,7 @@ Kullback-Leibler divergence."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Compute graph recovery metrics (single group)</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/mljaniczek/spikeyglass/blob/main/R/getmetric.R" class="external-link"><code>R/getmetric.R</code></a></small>
       <div class="d-none name"><code>getmetric.Rd</code></div>
     </div>
 
@@ -117,10 +118,10 @@ use <code><a href="compute_metrics.html">compute_metrics</a></code> which handle
 <span class="r-in"><span><span class="va">graph</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">truth</span> <span class="op">!=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">*</span> <span class="fl">1L</span>; <span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">graph</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fl">0L</span></span></span>
 <span class="r-in"><span><span class="fu">getmetric</span><span class="op">(</span><span class="va">est</span>, <span class="va">truth</span>, <span class="va">graph</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $SSE</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0008671386</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0009486989</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $L1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.6981802</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.7143814</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $nedges</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 10</span>
@@ -138,7 +139,7 @@ use <code><a href="compute_metrics.html">compute_metrics</a></code> which handle
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $dKL</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.500406</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.500498</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>
     </div>

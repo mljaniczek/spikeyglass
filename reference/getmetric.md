@@ -84,10 +84,10 @@ est <- (est + t(est)) / 2
 graph <- (truth != 0) * 1L; diag(graph) <- 0L
 getmetric(est, truth, graph)
 #> $SSE
-#> [1] 0.0008671386
+#> [1] 0.0009486989
 #> 
 #> $L1
-#> [1] 0.6981802
+#> [1] 0.7143814
 #> 
 #> $nedges
 #> [1] 10
@@ -105,6 +105,6 @@ getmetric(est, truth, graph)
 #> [1] 0
 #> 
 #> $dKL
-#> [1] 2.500406
+#> [1] 2.500498
 #> 
 ```

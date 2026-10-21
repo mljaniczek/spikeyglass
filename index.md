@@ -13,8 +13,8 @@ PMCID: PMC7845917.
 Code based on: <https://github.com/richardli/SSJGL>
 
 Acknowledgement The code to implement GGL and FGL are adapted from the R
-package [JGL](https://cran.r-project.org/web/packages/JGL/index.html) by
-Patrick Danaher.
+package [JGL](https://github.com/patrickjdanaher/JGL-package) by Patrick
+Danaher (MIT licence; see `inst/COPYRIGHTS`). JGL is not a dependency.
 
 ## Installation
 

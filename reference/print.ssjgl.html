@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">spikeyglass</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mljaniczek/spikeyglass/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -33,7 +34,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Print an ssjgl object</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/mljaniczek/spikeyglass/blob/main/R/methods.R" class="external-link"><code>R/methods.R</code></a></small>
       <div class="d-none name"><code>print.ssjgl.Rd</code></div>
     </div>
 
@@ -70,7 +71,6 @@
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="ssjgl.html">ssjgl</a></span><span class="op">(</span><span class="va">sim</span><span class="op">$</span><span class="va">data_list</span>, penalty <span class="op">=</span> <span class="st">"fused"</span>,</span></span>
 <span class="r-in"><span>             lambda0 <span class="op">=</span> <span class="fl">1</span>, lambda1 <span class="op">=</span> <span class="fl">0.5</span>, lambda2 <span class="op">=</span> <span class="fl">0.5</span>,</span></span>
 <span class="r-in"><span>             v0s <span class="op">=</span> <span class="fl">0.01</span>, maxitr.em <span class="op">=</span> <span class="fl">10</span>, impute <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Ladder= 1 v0 = 0.01 done. Time: 0</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Spike-and-Slab Joint Graphical Lasso (SSJGL)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Groups (K): 2</span>

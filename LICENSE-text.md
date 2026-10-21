@@ -1,4 +1,4 @@
 # License
 
-    YEAR: 2022
-    COPYRIGHT HOLDER: Margaret Janiczek
+    YEAR: 2022-2026
+    COPYRIGHT HOLDER: Margaret Janiczek, Zehang Richard Li, Patrick Danaher

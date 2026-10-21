@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">spikeyglass</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/mljaniczek/spikeyglass/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -33,7 +34,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>CLAUDE.md — spikeyglass</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/mljaniczek/spikeyglass/blob/main/CLAUDE.md" class="external-link"><code>CLAUDE.md</code></a></small>
     </div>
 
 <div id="claudemd--spikeyglass" class="section level1">
@@ -47,9 +48,9 @@
 <h2 id="method-summary">Method Summary<a class="anchor" aria-label="anchor" href="#method-summary"></a></h2>
 <div class="section level3">
 <h3 id="algorithm-em-with-dynamic-posterior-exploration">Algorithm: EM with dynamic posterior exploration<a class="anchor" aria-label="anchor" href="#algorithm-em-with-dynamic-posterior-exploration"></a></h3>
-<ol style="list-style-type: decimal"><li><p><strong>Outer loop</strong>: Iterate over a decreasing ladder of spike variance <code>v0s</code> with warm-starting between steps (dynamic posterior exploration, Section 3.3 of paper). Smaller v0 → stronger shrinkage for unlikely edges.</p></li>
+<ol style="list-style-type: decimal"><li><p><strong>Outer loop</strong>: Iterate over a decreasing ladder of spike variance <code>v0s</code> with warm-starting between steps (dynamic posterior exploration, Section 3.3 of paper). Smaller v0 → larger spike rate <code>lambda1/v0</code> → stronger shrinkage for unlikely edges. M-step soft-thresholds spike edges at ~<code>lambda1/(n v0)</code> on the covariance scale.</p></li>
 <li><p><strong>E-step</strong> (<code>gete()</code> / <code>gete.doubly()</code>): Compute posterior probabilities of edge inclusion P(delta=1) and (if doubly) similarity P(xi=1). Produces adaptive penalty weights <code>d = (1-prob)/v0 + prob/v1</code> for the M-step. Uses log-sum-exp trick for numerical stability.</p></li>
-<li><p><strong>M-step</strong> (<code>JGL.adaptive()</code> + <code>admm.iters.adaptive()</code>): ADMM-based Joint Graphical Lasso with matrix-valued lambda1/lambda2 penalties (edge-specific weights from E-step). Theta update via eigendecomposition, Z update via JGL’s <code>flsa2</code>/<code>dsgl</code>.</p></li>
+<li><p><strong>M-step</strong> (<code>JGL.adaptive()</code> + <code>admm.iters.adaptive()</code>): ADMM-based Joint Graphical Lasso with matrix-valued lambda1/lambda2 penalties (edge-specific weights from E-step). Theta update via eigendecomposition, Z update via C++ ports of JGL’s <code>flsa2</code>/<code>flsa.general</code>/<code>dsgl</code>.</p></li>
 <li><p><strong>Pi update</strong>: Beta posterior mode: <code>pi_delta = (a + sum_edges(prob1) - 1) / (a + b + n_edges - 2)</code>.</p></li>
 <li><p><strong>Missing data</strong>: Optional conditional MVN imputation at each EM iteration (<code>getmissing()</code>).</p></li>
 </ol></div>
@@ -76,7 +77,9 @@
 <li>
 <code>R/utils-admm.R</code> — <code>admm.iters.adaptive()</code>: ADMM iterations with matrix-valued penalties</li>
 <li>
-<code>R/utils-ssjgl.R</code> — <code>JGL.adaptive()</code>: Adapted JGL with block screening; <code><a href="reference/negloglik_Gaussian.html">negloglik_Gaussian()</a></code>, <code><a href="reference/precision_to_pcor.html">precision_to_pcor()</a></code>, <code><a href="reference/SSJGL_select_v0_cv.html">SSJGL_select_v0_cv()</a></code>, <code><a href="reference/SSJGL_final_with_pcor_CI.html">SSJGL_final_with_pcor_CI()</a></code>, <code><a href="reference/SSJGL_CV_final_pcorCI.html">SSJGL_CV_final_pcorCI()</a></code>
+<code>R/jgl-vendored.R</code> — <code>penalty.as.matrix()</code>, <code>admm.iters.unconnected.S()</code> (from JGL 2.3.2, MIT)</li>
+<li>
+<code>R/utils-ssjgl.R</code> — <code>JGL.adaptive()</code>: Adapted JGL with block screening; <code><a href="reference/negloglik_Gaussian.html">negloglik_Gaussian()</a></code>, <code><a href="https://rdrr.io/pkg/ggmtools/man/precision_to_pcor.html" class="external-link">precision_to_pcor()</a></code>, <code><a href="reference/SSJGL_select_v0_cv.html">SSJGL_select_v0_cv()</a></code>, <code><a href="reference/SSJGL_final_with_pcor_CI.html">SSJGL_final_with_pcor_CI()</a></code>, <code><a href="reference/SSJGL_CV_final_pcorCI.html">SSJGL_CV_final_pcorCI()</a></code>
 </li>
 </ul></div>
 <div class="section level3">
@@ -89,10 +92,20 @@
 </li>
 </ul></div>
 <div class="section level3">
+<h3 id="differential-edges">Differential edges<a class="anchor" aria-label="anchor" href="#differential-edges"></a></h3>
+<ul><li>
+<code>R/diff_edges.R</code> — <code><a href="reference/diff_edges.html">diff_edges()</a></code>: permutation (pooled null, BH) or bootstrap inference on group differences; refits via <code>fit$args</code>, optionally parallel through future.apply; <code>print</code>/<code>plot</code> methods. Edge-table columns follow multiGGMr where concepts match (<code>i</code>, <code>j</code>, <code>lower</code>, <code>upper</code>).</li>
+</ul></div>
+<div class="section level3">
 <h3 id="evaluation-and-visualization">Evaluation and visualization<a class="anchor" aria-label="anchor" href="#evaluation-and-visualization"></a></h3>
 <ul><li>
-<code>R/utils-eval.R</code> — <code><a href="reference/confusion_at_threshold.html">confusion_at_threshold()</a></code>, <code><a href="reference/roc_auc.html">roc_auc()</a></code>, <code><a href="reference/compute_metrics.html">compute_metrics()</a></code>, <code><a href="reference/plot_roc.html">plot_roc()</a></code>
+<code>R/utils-eval.R</code> — <code><a href="reference/compute_metrics.html">compute_metrics()</a></code>
 </li>
+<li>
+<code>R/reexports.R</code> — re-exports from ggmtools: <code><a href="https://rdrr.io/pkg/ggmtools/man/precision_to_pcor.html" class="external-link">precision_to_pcor()</a></code>, <code><a href="https://rdrr.io/pkg/ggmtools/man/confusion_at_threshold.html" class="external-link">confusion_at_threshold()</a></code>, <code><a href="https://rdrr.io/pkg/ggmtools/man/roc_auc.html" class="external-link">roc_auc()</a></code>, <code><a href="https://rdrr.io/pkg/ggmtools/man/plot_roc.html" class="external-link">plot_roc()</a></code>, <code><a href="https://rdrr.io/pkg/ggmtools/man/pip_table.html" class="external-link">pip_table()</a></code>, <code><a href="https://rdrr.io/pkg/ggmtools/man/pcor_estimate.html" class="external-link">pcor_estimate()</a></code>, <code><a href="https://rdrr.io/pkg/ggmtools/man/edge_index.html" class="external-link">edge_index()</a></code>
+</li>
+<li>
+<code>R/methods.R</code> also has <code><a href="reference/ssjgl-accessors.html">pip_table.ssjgl()</a></code> / <code><a href="reference/ssjgl-accessors.html">pcor_estimate.ssjgl()</a></code> (ggmtools generics)</li>
 <li>
 <code>R/plot_path.R</code> — <code><a href="reference/plot_path.html">plot_path()</a></code>: Solution path visualization</li>
 <li>
@@ -110,7 +123,7 @@
 <ul><li>
 <code>R/spikeyglass-package.R</code> — Package-level imports</li>
 <li>
-<code>R/data.R</code> — Dataset documentation (simdat)</li>
+<code>R/data.R</code> — Dataset documentation (simdat: 3 groups, p = 50, with true graphs; built by data-raw/simdat.R)</li>
 </ul></div>
 </div>
 <div class="section level2">
@@ -119,8 +132,11 @@
 <th>Default</th>
 <th>Notes</th>
 </tr></thead><tbody><tr><td><code>v0s</code></td>
-<td><code>seq(0.0001, 0.01, len=10)</code></td>
-<td>Spike variance ladder (decreasing = more sparse)</td>
+<td>
+<code>NULL</code> = <code>make_v0_ladder(lambda1)</code> = <code>lambda1/c(10, 31.6, 100)</code>
+</td>
+<td>Decreasing spike ladder. Spike is Laplace with rate <code>lambda1/v0</code> on precision entries (scale <code>v0/lambda1</code>); only <code>lambda1/v0</code> matters. Chosen by <code>data-raw/v0-ladder-study.R</code>
+</td>
 </tr><tr><td><code>v1</code></td>
 <td>1</td>
 <td>Slab variance</td>
@@ -129,7 +145,7 @@
 <td>Diagonal penalty (user must specify)</td>
 </tr><tr><td><code>lambda1</code></td>
 <td>—</td>
-<td>Off-diagonal sparsity penalty (user must specify)</td>
+<td>Off-diagonal sparsity penalty (user must specify; 1 with <code>standardize = TRUE</code>, as in Li et al.)</td>
 </tr><tr><td><code>lambda2</code></td>
 <td>—</td>
 <td>Cross-group similarity penalty (user must specify)</td>
@@ -141,6 +157,9 @@
 </tr><tr><td><code>doubly</code></td>
 <td>FALSE</td>
 <td>Whether to use doubly spike-and-slab</td>
+</tr><tr><td><code>standardize</code></td>
+<td>FALSE</td>
+<td>Centre and scale columns per group (recommended); <code>normalize</code> only centres</td>
 </tr><tr><td><code>maxitr.em</code></td>
 <td>500</td>
 <td>Max EM iterations per v0 step</td>
@@ -151,9 +170,7 @@
 <div class="section level2">
 <h2 id="dependencies">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies"></a></h2>
 <ul><li>
-<code>JGL</code> — Core ADMM routines (flsa2, dsgl, flsa.general, penalty.as.matrix)</li>
-<li>
-<code>igraph</code> — Block structure detection in screening step</li>
+<code>Rcpp</code>, <code>RcppArmadillo</code> — C++ EM loop and ADMM (JGL routines vendored/ported; JGL and igraph are no longer dependencies)</li>
 <li>
 <code>MASS</code> — <code>mvrnorm()</code> for data simulation</li>
 <li>
@@ -180,18 +197,18 @@
 <h2 id="known-issues--bug-fixes">Known Issues &amp; Bug Fixes<a class="anchor" aria-label="anchor" href="#known-issues--bug-fixes"></a></h2>
 <ol style="list-style-type: decimal"><li><p><strong>Pi_delta double-counting (fixed)</strong>: Original code used <code>sum(prob1)</code> which double-counts symmetric entries. Fixed to <code>sum(prob1) / 2</code>. Note: the original reference code (richardli/SSJGL) has the same issue.</p></li>
 <li><p><strong>Convergence criterion (fixed)</strong>: Original used <code>max(diff, (theta_last[[k]] - theta[[k]])^2)</code> which computes element-wise squared differences. Fixed to <code>max(abs(...))</code> for consistent tolerance semantics.</p></li>
-<li><p><strong>JGL internal access</strong>: Package uses <code>JGL:::</code> to access unexported functions (flsa2, dsgl, flsa.general, penalty.as.matrix). These may break if JGL changes internals. Locations: <code>R/utils-ssjgl.R</code> (<code>penalty.as.matrix</code>) and <code>R/utils-admm.R</code> (R fallback ADMM for fused K&gt;2). <code>admm.iters.unconnected</code> is vendored as <code>admm.iters.unconnected.S()</code> in <code>R/utils-admm.R</code>. The C++ ADMM path reimplements flsa2 and dsgl.</p></li>
+<li><p><strong>JGL vendored (2026-10)</strong>: JGL was archived from CRAN, so it is no longer a dependency. <code>R/jgl-vendored.R</code> holds <code>penalty.as.matrix()</code> and <code>admm.iters.unconnected.S()</code>; <code>src/admm_adaptive.cpp</code> ports flsa2, dsgl and flsa.general (<code>flsa_general_update()</code>). Attribution is in <code>inst/COPYRIGHTS</code>. igraph has also been dropped: <code><a href="reference/connected_components_cpp.html">connected_components_cpp()</a></code> does block detection. <code>tests/testthat/fixtures/</code> holds the pre-vendoring reference fits and the JGL flsa.general outputs.</p></li>
 <li><p><strong>Imputation meanj indexing (fixed)</strong>: <code>ssjgl.R</code> line 356 used <code>meanj[missed[, 3]]</code> which indexes a (K x p) matrix with a single vector (treated as linear indexing). Fixed to <code>meanj[cbind(missed[, 1], missed[, 3])]</code> for correct group-specific mean restoration.</p></li>
 <li><p><strong>Correctness fixes (2026-10, see NEWS.md)</strong>: lambda = 0 drops its prior terms in the E-step (<code>laplace_logprior()</code>); <code>getmissing()</code> uses <code>drop = FALSE</code>; data are always centred internally when imputing, and <code>imputed</code> is returned on the original scale; the M-step ADMM takes S matrices (S + addvar/n with missing data, per Li et al. 2019 supplement B); <code>warm</code>/<code>warm.connected</code> were removed from <code><a href="reference/ssjgl.html">ssjgl()</a></code>. <code>tests/testthat/test-bugfixes.R</code> checks that the C++ and R EM paths agree.</p></li>
 </ol></div>
 <div class="section level2">
 <h2 id="todo-low-priority">TODO (low priority)<a class="anchor" aria-label="anchor" href="#todo-low-priority"></a></h2>
-<ul><li>
-<strong>JGL ::: fragility</strong>: Long-term, consider vendoring the 4-5 JGL internal functions (flsa2, dsgl, flsa.general, penalty.as.matrix) directly into spikeyglass to remove the fragile <code>:::</code> dependency. The C++ ADMM path already reimplements the core routines for K&lt;=2.</li>
+<ul><li>None currently.</li>
 </ul></div>
 <div class="section level2">
-<h2 id="cross-project-notes-multiggmr">Cross-project Notes (multiGGMr)<a class="anchor" aria-label="anchor" href="#cross-project-notes-multiggmr"></a></h2>
-<p>Shared utility functions adapted between packages (keeping consistent signatures): - <code><a href="reference/precision_to_pcor.html">precision_to_pcor()</a></code> — Precision to partial correlation conversion - <code><a href="reference/confusion_at_threshold.html">confusion_at_threshold()</a></code> / <code><a href="reference/roc_auc.html">roc_auc()</a></code> — Evaluation metrics - <code><a href="reference/simulate_ssjgl_data.html">simulate_ssjgl_data()</a></code> — Data simulation (adapted from multiGGMr’s <code>simulate_multiggm()</code>)</p>
+<h2 id="cross-project-notes-multiggmr-ggmtools">Cross-project Notes (multiGGMr, ggmtools)<a class="anchor" aria-label="anchor" href="#cross-project-notes-multiggmr-ggmtools"></a></h2>
+<p>Functions shared with multiGGMr (github.com/mljaniczek/multiGGMr) live in <strong>ggmtools</strong> (github.com/mljaniczek/ggmtools; local checkout <code>../ggmtools</code>), and both packages re-export them: - <code><a href="https://rdrr.io/pkg/ggmtools/man/precision_to_pcor.html" class="external-link">precision_to_pcor()</a></code>, <code><a href="https://rdrr.io/pkg/ggmtools/man/confusion_at_threshold.html" class="external-link">confusion_at_threshold()</a></code>, <code><a href="https://rdrr.io/pkg/ggmtools/man/roc_auc.html" class="external-link">roc_auc()</a></code> (tie-correct; returns <code>auc</code>), <code><a href="https://rdrr.io/pkg/ggmtools/man/plot_roc.html" class="external-link">plot_roc()</a></code> - generics <code><a href="https://rdrr.io/pkg/ggmtools/man/pip_table.html" class="external-link">pip_table()</a></code> (long edge table: i, j, node1, node2, group, pip) and <code><a href="https://rdrr.io/pkg/ggmtools/man/pcor_estimate.html" class="external-link">pcor_estimate()</a></code> (list of K pcor matrices); each package registers methods - <code><a href="https://rdrr.io/pkg/ggmtools/man/edge_index.html" class="external-link">edge_index()</a></code> / <code>as_pip_table()</code> for the shared edge-table format; dataset <code>brca_pi3k</code></p>
+<p>Change shared behaviour in ggmtools, not here. Until ggmtools is on CRAN, DESCRIPTION has <code>Remotes: mljaniczek/ggmtools</code>.</p>
 <p>Both packages are for multiple GGM estimation but use different methods: - <code>spikeyglass</code>: EM + spike-and-slab + JGL (Li et al. 2019) - <code>multiGGMr</code>: MCMC + MRF priors + G-Wishart (Peterson et al. 2015)</p>
 </div>
 </div>

@@ -10,7 +10,7 @@ consecutive steps.
 ``` r
 plot_stability(
   fit,
-  v0s,
+  v0s = fit$v0s,
   threshold = 0.5,
   what = c("edges", "prob", "change"),
   ...
@@ -25,8 +25,10 @@ plot_stability(
 
 - v0s:
 
-  Numeric vector of v0 values used in the fit (same as passed to
-  [`ssjgl`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md)).
+  Numeric vector of v0 values used in the fit. Defaults to `fit$v0s`,
+  which
+  [`ssjgl`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl.md)
+  stores.
 
 - threshold:
 
@@ -76,10 +78,10 @@ Invisible list with computed stability data:
 ``` r
 if (FALSE) { # \dontrun{
 sim <- simulate_ssjgl_data(K = 2, p = 15, n = 100, seed = 42)
-v0s <- make_v0_ladder(lambda1 = 0.5, n_steps = 10)
+v0s <- make_v0_ladder(lambda1 = 1, n_steps = 10, min_ratio = 5, max_ratio = 500)
 fit <- ssjgl(Y = sim$data_list, penalty = "fused",
-             lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5,
-             v0s = v0s, normalize = TRUE)
-plot_stability(fit, v0s)
+             lambda0 = 1, lambda1 = 1, lambda2 = 1,
+             v0s = v0s, standardize = TRUE, impute = FALSE)
+plot_stability(fit)
 } # }
 ```

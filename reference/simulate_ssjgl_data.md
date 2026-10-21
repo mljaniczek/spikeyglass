@@ -56,7 +56,9 @@ simulate_ssjgl_data(
 
 - seed:
 
-  Integer random seed for reproducibility. Default `NULL`.
+  Integer random seed for reproducibility, used locally (the previous
+  state is restored on exit) so the caller's random-number stream is
+  left unchanged. Default `NULL` uses the current stream.
 
 ## Value
 
