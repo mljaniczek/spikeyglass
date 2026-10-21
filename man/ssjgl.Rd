@@ -18,6 +18,7 @@ ssjgl(
   b = 1,
   maxitr.em = 500,
   tol.em = 1e-04,
+  tol.pi = 0.001,
   maxitr.jgl = 500,
   tol.jgl = 1e-05,
   truncate = 1e-05,
@@ -25,6 +26,7 @@ ssjgl(
   c = 0.1,
   impute = TRUE,
   standardize = FALSE,
+  carry_pi = FALSE,
   verbose = FALSE
 )
 }
@@ -90,7 +92,14 @@ a sparse prior.}
 
 \item{maxitr.em}{Integer max EM iterations per v0 step. Default 500.}
 
-\item{tol.em}{Numeric EM convergence tolerance. Default 1e-4.}
+\item{tol.em}{Numeric EM convergence tolerance for the largest absolute
+change in any precision entry. Default 1e-4.}
+
+\item{tol.pi}{Numeric EM convergence tolerance for the change in
+\code{log(pi_delta)} (and \code{log(pi_xi)} if \code{doubly}). A ladder
+step stops only when both tolerances are met; checking theta alone
+could stop the EM while pi was still collapsing. Default 1e-3 (a 0.1\\%
+relative change).}
 
 \item{maxitr.jgl}{Integer max ADMM iterations for M-step. Default 500.}
 
@@ -123,6 +132,11 @@ precision matrices are estimated on the correlation scale and
 whatever the variables' units. Recommended unless the variables are
 already on a common, meaningful scale. Default \code{FALSE} (for
 back-compatibility). Imputed values are returned on the original scale.}
+
+\item{carry_pi}{Logical. If \code{TRUE}, pi_delta and pi_xi start each
+ladder step from their values at the end of the previous step. If
+\code{FALSE} (default, as in Li et al. 2019), they restart at the prior
+mean \code{a/(a+b)}.}
 
 \item{verbose}{Logical. If \code{TRUE}, report progress (each EM
 iteration on the R path, and each ladder step) with \code{message()}.
@@ -183,6 +197,29 @@ The algorithm follows the dynamic posterior exploration strategy of Li et al.
 (increasing spike penalty \code{lambda1/v0}) with warm-starting between
 steps.
 }
+\section{Posterior inclusion probabilities}{
+
+\code{problist1} holds the E-step probabilities \eqn{P(\delta_{jk} = 1)}
+given the current estimates. They are conditional probabilities inside an
+EM (posterior-mode) algorithm, not calibrated posterior probabilities, so
+they should not be used for Bayesian FDR control. They do rank edges well,
+and PIP > 0.5 is a reasonable selection rule with the default ladder.
+
+An edge reaches PIP 0.5 only if, roughly,
+\eqn{\sum_g |\theta^{(g)}_{jk}| > (G \log r - \mathrm{logit}\,\pi_\delta)
+/ (r - 1)}, with \eqn{r = \lambda_1 / v_0}. If the ladder ends at a small
+\eqn{r} (e.g. 16), this bar is above typical edge sizes; then
+\eqn{\pi_\delta} shrinks, which raises the bar again, and the PIPs
+collapse towards 0 even though they still rank edges. The default ladder
+ends at \eqn{r = 100}. \code{ssjgl()} warns when no edge has PIP > 0.5 at
+the last step. \eqn{\pi} is kept inside \eqn{[1/N, 1 - 1/N]}, where
+\eqn{N = p(p-1)/2}. See \code{data-raw/pip-collapse-diagnostic.md} in the
+package sources for the analysis.
+
+\code{problist2} (\eqn{P(\xi_{jk} = 1)}, doubly only) is the most fragile
+output; treat it as a ranking.
+}
+
 \examples{
 sim <- simulate_ssjgl_data(K = 2, p = 10, n = 50, seed = 1)
 fit <- ssjgl(sim$data_list, penalty = "fused",

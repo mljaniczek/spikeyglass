@@ -57,8 +57,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // ssjgl_em_inner_cpp
-List ssjgl_em_inner_cpp(List S_list, Nullable<List> addvar_list, NumericVector n_vec, List theta_init, std::string penalty, double lambda0, double lambda1, double lambda2, double v0, double v1, bool doubly, double rho, double a, double b, int maxitr_em, double tol_em, int maxitr_jgl, double tol_jgl, double truncate);
-RcppExport SEXP _spikeyglass_ssjgl_em_inner_cpp(SEXP S_listSEXP, SEXP addvar_listSEXP, SEXP n_vecSEXP, SEXP theta_initSEXP, SEXP penaltySEXP, SEXP lambda0SEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP v0SEXP, SEXP v1SEXP, SEXP doublySEXP, SEXP rhoSEXP, SEXP aSEXP, SEXP bSEXP, SEXP maxitr_emSEXP, SEXP tol_emSEXP, SEXP maxitr_jglSEXP, SEXP tol_jglSEXP, SEXP truncateSEXP) {
+List ssjgl_em_inner_cpp(List S_list, Nullable<List> addvar_list, NumericVector n_vec, List theta_init, std::string penalty, double lambda0, double lambda1, double lambda2, double v0, double v1, bool doubly, double rho, double a, double b, int maxitr_em, double tol_em, int maxitr_jgl, double tol_jgl, double truncate, double pi_delta_init, double pi_xi_init, double pi_floor, double tol_pi);
+RcppExport SEXP _spikeyglass_ssjgl_em_inner_cpp(SEXP S_listSEXP, SEXP addvar_listSEXP, SEXP n_vecSEXP, SEXP theta_initSEXP, SEXP penaltySEXP, SEXP lambda0SEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP v0SEXP, SEXP v1SEXP, SEXP doublySEXP, SEXP rhoSEXP, SEXP aSEXP, SEXP bSEXP, SEXP maxitr_emSEXP, SEXP tol_emSEXP, SEXP maxitr_jglSEXP, SEXP tol_jglSEXP, SEXP truncateSEXP, SEXP pi_delta_initSEXP, SEXP pi_xi_initSEXP, SEXP pi_floorSEXP, SEXP tol_piSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -81,7 +81,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxitr_jgl(maxitr_jglSEXP);
     Rcpp::traits::input_parameter< double >::type tol_jgl(tol_jglSEXP);
     Rcpp::traits::input_parameter< double >::type truncate(truncateSEXP);
-    rcpp_result_gen = Rcpp::wrap(ssjgl_em_inner_cpp(S_list, addvar_list, n_vec, theta_init, penalty, lambda0, lambda1, lambda2, v0, v1, doubly, rho, a, b, maxitr_em, tol_em, maxitr_jgl, tol_jgl, truncate));
+    Rcpp::traits::input_parameter< double >::type pi_delta_init(pi_delta_initSEXP);
+    Rcpp::traits::input_parameter< double >::type pi_xi_init(pi_xi_initSEXP);
+    Rcpp::traits::input_parameter< double >::type pi_floor(pi_floorSEXP);
+    Rcpp::traits::input_parameter< double >::type tol_pi(tol_piSEXP);
+    rcpp_result_gen = Rcpp::wrap(ssjgl_em_inner_cpp(S_list, addvar_list, n_vec, theta_init, penalty, lambda0, lambda1, lambda2, v0, v1, doubly, rho, a, b, maxitr_em, tol_em, maxitr_jgl, tol_jgl, truncate, pi_delta_init, pi_xi_init, pi_floor, tol_pi));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -90,7 +94,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_spikeyglass_admm_iters_adaptive_cpp", (DL_FUNC) &_spikeyglass_admm_iters_adaptive_cpp, 10},
     {"_spikeyglass_flsa_general_cpp", (DL_FUNC) &_spikeyglass_flsa_general_cpp, 4},
     {"_spikeyglass_connected_components_cpp", (DL_FUNC) &_spikeyglass_connected_components_cpp, 1},
-    {"_spikeyglass_ssjgl_em_inner_cpp", (DL_FUNC) &_spikeyglass_ssjgl_em_inner_cpp, 19},
+    {"_spikeyglass_ssjgl_em_inner_cpp", (DL_FUNC) &_spikeyglass_ssjgl_em_inner_cpp, 23},
     {NULL, NULL, 0}
 };
 

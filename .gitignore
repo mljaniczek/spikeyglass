@@ -50,6 +50,9 @@ src/*.dll
 tests/testthat/Rplots.pdf
 data-raw/v0-ladder-study-cache/
 bench-cache/
+data-raw/pip-collapse-cache/
+data-raw/pip-collapse-diagnostic-trace.csv
+data-raw/pip-collapse-diagnostic-steps.csv
 
 # Claude Code: per-session worktrees and personal settings
 .claude/worktrees/

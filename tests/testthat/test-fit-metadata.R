@@ -2,7 +2,8 @@
 
 quiet_fit <- function(...) {
   out <- NULL
-  utils::capture.output(out <- suppressMessages(ssjgl(...)))
+  # tiny fits may legitimately select no edge (collapse warning)
+  utils::capture.output(out <- suppressWarnings(suppressMessages(ssjgl(...))))
   out
 }
 

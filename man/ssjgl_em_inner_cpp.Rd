@@ -23,7 +23,11 @@ ssjgl_em_inner_cpp(
   tol_em,
   maxitr_jgl,
   tol_jgl,
-  truncate
+  truncate,
+  pi_delta_init,
+  pi_xi_init,
+  pi_floor,
+  tol_pi
 )
 }
 \arguments{
@@ -64,6 +68,12 @@ ssjgl_em_inner_cpp(
 \item{tol_jgl}{ADMM convergence tolerance}
 
 \item{truncate}{Threshold for zeroing small entries}
+
+\item{pi_delta_init, pi_xi_init}{Starting values of pi_delta and pi_xi}
+
+\item{pi_floor}{pi is kept between pi_floor and 1 - pi_floor}
+
+\item{tol_pi}{Convergence tolerance for the change in log(pi)}
 }
 \value{
 List with theta, prob1, prob2, d1, d2, pi_delta, pi_xi, itr

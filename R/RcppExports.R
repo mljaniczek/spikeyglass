@@ -71,9 +71,12 @@ connected_components_cpp <- function(adj) {
 #' @param maxitr_jgl Max ADMM iterations
 #' @param tol_jgl ADMM convergence tolerance
 #' @param truncate Threshold for zeroing small entries
+#' @param pi_delta_init,pi_xi_init Starting values of pi_delta and pi_xi
+#' @param pi_floor pi is kept between pi_floor and 1 - pi_floor
+#' @param tol_pi Convergence tolerance for the change in log(pi)
 #' @return List with theta, prob1, prob2, d1, d2, pi_delta, pi_xi, itr
 #' @keywords internal
-ssjgl_em_inner_cpp <- function(S_list, addvar_list, n_vec, theta_init, penalty, lambda0, lambda1, lambda2, v0, v1, doubly, rho, a, b, maxitr_em, tol_em, maxitr_jgl, tol_jgl, truncate) {
-    .Call(`_spikeyglass_ssjgl_em_inner_cpp`, S_list, addvar_list, n_vec, theta_init, penalty, lambda0, lambda1, lambda2, v0, v1, doubly, rho, a, b, maxitr_em, tol_em, maxitr_jgl, tol_jgl, truncate)
+ssjgl_em_inner_cpp <- function(S_list, addvar_list, n_vec, theta_init, penalty, lambda0, lambda1, lambda2, v0, v1, doubly, rho, a, b, maxitr_em, tol_em, maxitr_jgl, tol_jgl, truncate, pi_delta_init, pi_xi_init, pi_floor, tol_pi) {
+    .Call(`_spikeyglass_ssjgl_em_inner_cpp`, S_list, addvar_list, n_vec, theta_init, penalty, lambda0, lambda1, lambda2, v0, v1, doubly, rho, a, b, maxitr_em, tol_em, maxitr_jgl, tol_jgl, truncate, pi_delta_init, pi_xi_init, pi_floor, tol_pi)
 }
 
