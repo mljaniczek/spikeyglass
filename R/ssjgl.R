@@ -60,7 +60,13 @@
 #' @param b Numeric Beta prior shape2. Default 1. Setting \code{b = p} gives
 #'   a sparse prior.
 #' @param maxitr.em Integer max EM iterations per v0 step. Default 500.
-#' @param tol.em Numeric EM convergence tolerance. Default 1e-4.
+#' @param tol.em Numeric EM convergence tolerance for the largest absolute
+#'   change in any precision entry. Default 1e-4.
+#' @param tol.pi Numeric EM convergence tolerance for the change in
+#'   \code{log(pi_delta)} (and \code{log(pi_xi)} if \code{doubly}). A ladder
+#'   step stops only when both tolerances are met; checking theta alone
+#'   could stop the EM while pi was still collapsing. Default 1e-3 (a 0.1\%
+#'   relative change).
 #' @param maxitr.jgl Integer max ADMM iterations for M-step. Default 500.
 #' @param tol.jgl Numeric ADMM convergence tolerance. Default 1e-5.
 #' @param truncate Numeric threshold below which entries are zeroed. Default
@@ -79,6 +85,10 @@
 #'   covariance given the observed data, i.e. the covariance of the imputed
 #'   data plus the conditional covariance of the missing cells (Li et al.,
 #'   2019, supplement B). Default \code{TRUE}.
+#' @param carry_pi Logical. If \code{TRUE}, pi_delta and pi_xi start each
+#'   ladder step from their values at the end of the previous step. If
+#'   \code{FALSE} (default, as in Li et al. 2019), they restart at the prior
+#'   mean \code{a/(a+b)}.
 #' @param verbose Logical. If \code{TRUE}, report progress (each EM
 #'   iteration on the R path, and each ladder step) with \code{message()}.
 #'   Default \code{FALSE}.
@@ -131,6 +141,27 @@
 #'     \item{call}{The matched call.}
 #'   }
 #'
+#' @section Posterior inclusion probabilities:
+#' \code{problist1} holds the E-step probabilities \eqn{P(\delta_{jk} = 1)}
+#' given the current estimates. They are conditional probabilities inside an
+#' EM (posterior-mode) algorithm, not calibrated posterior probabilities, so
+#' they should not be used for Bayesian FDR control. They do rank edges well,
+#' and PIP > 0.5 is a reasonable selection rule with the default ladder.
+#'
+#' An edge reaches PIP 0.5 only if, roughly,
+#' \eqn{\sum_g |\theta^{(g)}_{jk}| > (G \log r - \mathrm{logit}\,\pi_\delta)
+#' / (r - 1)}, with \eqn{r = \lambda_1 / v_0}. If the ladder ends at a small
+#' \eqn{r} (e.g. 16), this bar is above typical edge sizes; then
+#' \eqn{\pi_\delta} shrinks, which raises the bar again, and the PIPs
+#' collapse towards 0 even though they still rank edges. The default ladder
+#' ends at \eqn{r = 100}. \code{ssjgl()} warns when no edge has PIP > 0.5 at
+#' the last step. \eqn{\pi} is kept inside \eqn{[1/N, 1 - 1/N]}, where
+#' \eqn{N = p(p-1)/2}. See \code{data-raw/pip-collapse-diagnostic.md} in the
+#' package sources for the analysis.
+#'
+#' \code{problist2} (\eqn{P(\xi_{jk} = 1)}, doubly only) is the most fragile
+#' output; treat it as a ranking.
+#'
 #' @references
 #' Li, Z. R., McCormick, T. H., & Clark, S. J. (2019). Bayesian Joint
 #' Spike-and-Slab Graphical Lasso. \emph{ICML 2019}.
@@ -153,13 +184,14 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
                   v0s = NULL,
                   doubly=FALSE,
                   rho=1, a=1, b =1,
-                  maxitr.em=500, tol.em=1e-4,
+                  maxitr.em=500, tol.em=1e-4, tol.pi=1e-3,
                   maxitr.jgl=500,tol.jgl=1e-5,
                   truncate=1e-5,
                   normalize=FALSE,
                   c=0.1,
                   impute=TRUE,
                   standardize=FALSE,
+                  carry_pi=FALSE,
                   verbose=FALSE){
   cl <- match.call()
 
@@ -189,6 +221,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
   args <- list(penalty = penalty, lambda0 = lambda0, lambda1 = lambda1,
                lambda2 = lambda2, v1 = v1, v0s = v0s, doubly = doubly,
                rho = rho, a = a, b = b, maxitr.em = maxitr.em, tol.em = tol.em,
+               tol.pi = tol.pi, carry_pi = carry_pi,
                maxitr.jgl = maxitr.jgl, tol.jgl = tol.jgl, truncate = truncate,
                normalize = normalize, c = c, impute = impute,
                standardize = standardize, verbose = verbose)
@@ -277,16 +310,26 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
   # C++ path handles every penalty and K; the R loop is needed only to impute
   use_cpp_em <- !impute
 
+  # pi is kept inside [1/N, 1 - 1/N] (N = number of variable pairs), so that
+  # log(pi) stays finite in the E-step; otherwise pi_xi can reach exactly 0
+  # and stay there.
+  n_edges <- p * (p - 1) / 2
+  pi_floor <- min(1 / n_edges, 0.5)
+  clamp_pi <- function(x) min(max(x, pi_floor), 1 - pi_floor)
+
   time <- rep(0, length(v0s))
   for(i in 1:length(v0s)){
     start_time <- Sys.time()
 
-    # initialize parameters
-    pi_delta <- a/(a+b)
-    pi_xi <- a/(a+b)
+    # initialize parameters (pi restarts at the prior mean at every step
+    # unless carry_pi = TRUE)
+    if(!carry_pi || i == 1){
+      pi_delta <- clamp_pi(a/(a+b))
+      pi_xi <- clamp_pi(a/(a+b))
+    }
     pi_delta_last <- NULL
     itr <- 1
-    diff <- 1
+    diff <- diff_pi <- 1
     v0 <- v0s[i]
     # re-initiate if all 0 in previous case
     tmp <- theta
@@ -324,7 +367,9 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
         rho = rho, a = a, b = b,
         maxitr_em = maxitr.em, tol_em = tol.em,
         maxitr_jgl = maxitr.jgl, tol_jgl = tol.jgl,
-        truncate = truncate
+        truncate = truncate,
+        pi_delta_init = pi_delta, pi_xi_init = pi_xi,
+        pi_floor = pi_floor, tol_pi = tol.pi
       )
       theta <- em_result$theta
       prob1 <- em_result$prob1
@@ -343,7 +388,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
     } else {
       # === R EM loop (used for imputation or K>2 fused) ===
       for(itr in 1:maxitr.em){
-        if(diff < tol.em) break
+        if(diff < tol.em && diff_pi < tol.pi) break
         # missing impute step
         if(impute){
           tmp <- getmissing(Y, theta, missed)
@@ -362,9 +407,8 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
         diag(prob1) <- 0
         if(doubly) diag(prob2) <- 0
         # Pi update
-        n_edges <- p * (p - 1) / 2
-        pi_delta <- (a + sum(prob1) / 2 - 1) / (a + b + n_edges - 2)
-        if(doubly) pi_xi <- (a + sum(prob2) / 2 - 1) / (a + b + n_edges - 2)
+        pi_delta <- clamp_pi((a + sum(prob1) / 2 - 1) / (a + b + n_edges - 2))
+        if(doubly) pi_xi <- clamp_pi((a + sum(prob2) / 2 - 1) / (a + b + n_edges - 2))
 
         # M-step
         lambda1_current <- lambda1 * d1
@@ -381,6 +425,8 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
         if(!is.null(pi_delta_last)){
           diff <- 0
           for(k in 1:length(theta_last)) diff <- max(diff, max(abs(theta_last[[k]] - theta[[k]])))
+          diff_pi <- abs(log(pi_delta) - log(pi_delta_last))
+          if(doubly) diff_pi <- max(diff_pi, abs(log(pi_xi) - log(pi_xi_last)))
           if(verbose){
             if(doubly){
               message("Itr ", itr, "  Difference: ", round(diff,6), "  p.slab1: ", round(pi_delta, 4), "  p.slab2: ", round(pi_xi, 10))
@@ -390,6 +436,7 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
           }
         }
         pi_delta_last <- pi_delta
+        pi_xi_last <- pi_xi
         theta_last <- theta
       }
     }
@@ -406,6 +453,20 @@ ssjgl <- function(Y,penalty="fused",lambda0,lambda1,lambda2,
     trace_diff <- diff
     time[i] <- as.numeric(Sys.time() - start_time, units="secs")
     if(verbose) message("Ladder step ", i, ": v0 = ", signif(v0, 5), " done (", itr, " EM iterations, ", round(time[i], 1), " s)")
+  }
+
+  # Warn when the last step selected nothing: usually the spike penalty is too
+  # strong for the scale of the precision entries (see ?ssjgl, v0s).
+  last_prob <- trace_prob[[length(v0s)]]
+  n_sel <- sum(last_prob[upper.tri(last_prob)] > 0.5)
+  if(n_sel == 0 || pi_delta <= pi_floor){
+    warning(sprintf(paste0(
+      "At the last ladder step %d edges have PIP > 0.5 and pi_delta = %.3g ",
+      "(floor %.3g). The PIPs may have collapsed: an edge needs roughly ",
+      "sum_g |theta_g| > (G log r - logit(pi)) / (r - 1), r = lambda1/v0, to ",
+      "reach PIP 0.5. Consider the default ladder, standardize = TRUE, or a ",
+      "ladder ending at a larger lambda1/v0. See ?ssjgl."),
+      n_sel, pi_delta, pi_floor), call. = FALSE)
   }
 
   if(impute){

@@ -554,6 +554,9 @@ IntegerVector connected_components_cpp(LogicalMatrix adj) {
 //' @param maxitr_jgl Max ADMM iterations
 //' @param tol_jgl ADMM convergence tolerance
 //' @param truncate Threshold for zeroing small entries
+//' @param pi_delta_init,pi_xi_init Starting values of pi_delta and pi_xi
+//' @param pi_floor pi is kept between pi_floor and 1 - pi_floor
+//' @param tol_pi Convergence tolerance for the change in log(pi)
 //' @return List with theta, prob1, prob2, d1, d2, pi_delta, pi_xi, itr
 //' @keywords internal
 // [[Rcpp::export]]
@@ -567,7 +570,9 @@ List ssjgl_em_inner_cpp(List S_list, Nullable<List> addvar_list,
                         double rho, double a, double b,
                         int maxitr_em, double tol_em,
                         int maxitr_jgl, double tol_jgl,
-                        double truncate) {
+                        double truncate,
+                        double pi_delta_init, double pi_xi_init,
+                        double pi_floor, double tol_pi) {
   int K = S_list.size();
   mat S0 = as<mat>(S_list[0]);
   int p = S0.n_rows;
@@ -599,17 +604,19 @@ List ssjgl_em_inner_cpp(List S_list, Nullable<List> addvar_list,
   prob1.diag().zeros();
   prob2.diag().zeros();
 
-  double pi_delta = a / (a + b);
-  double pi_xi = a / (a + b);
+  double pi_delta = pi_delta_init;
+  double pi_xi = pi_xi_init;
+  double pi_delta_last = pi_delta, pi_xi_last = pi_xi;
   bool pi_delta_initialized = false;
-  double diff = 1.0;
+  // Converged when theta changes by < tol_em AND log(pi) by < tol_pi
+  double diff = 1.0, diff_pi = 1.0;
   int itr = 0;
   double n_edges = p * (p - 1.0) / 2.0;
 
   std::vector<mat> theta_last(K);
 
   for (itr = 1; itr <= maxitr_em; itr++) {
-    if (diff < tol_em) break;
+    if (diff < tol_em && diff_pi < tol_pi) break;
 
     // Compute S with addvar if present
     std::vector<mat> S(K);
@@ -636,9 +643,14 @@ List ssjgl_em_inner_cpp(List S_list, Nullable<List> addvar_list,
     }
 
     // Pi update
+    // Beta posterior mode, kept inside [pi_floor, 1 - pi_floor] so that
+    // log(pi) stays finite in the next E-step (pi_xi could otherwise reach
+    // exactly 0 and stay there)
     pi_delta = (a + accu(prob1) / 2.0 - 1.0) / (a + b + n_edges - 2.0);
+    pi_delta = std::min(std::max(pi_delta, pi_floor), 1.0 - pi_floor);
     if (doubly) {
       pi_xi = (a + accu(prob2) / 2.0 - 1.0) / (a + b + n_edges - 2.0);
+      pi_xi = std::min(std::max(pi_xi, pi_floor), 1.0 - pi_floor);
     }
 
     // Compute penalty weight matrices
@@ -772,8 +784,14 @@ List ssjgl_em_inner_cpp(List S_list, Nullable<List> addvar_list,
       for (int k = 0; k < K; k++) {
         diff = std::max(diff, (double)max(max(abs(theta_last[k] - theta_new[k]))));
       }
+      diff_pi = std::abs(std::log(pi_delta) - std::log(pi_delta_last));
+      if (doubly) {
+        diff_pi = std::max(diff_pi, std::abs(std::log(pi_xi) - std::log(pi_xi_last)));
+      }
     }
     pi_delta_initialized = true;
+    pi_delta_last = pi_delta;
+    pi_xi_last = pi_xi;
     theta_last = theta_new;
     theta = theta_new;
   }

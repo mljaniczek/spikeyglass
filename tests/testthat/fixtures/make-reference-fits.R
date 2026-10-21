@@ -1,9 +1,12 @@
 # Generates reference-fits.rds: reference ssjgl() outputs used by
 # test-reference-fits.R to check that numerical results do not change.
 #
-# Generated at commit 0e9694e (branch fix/correctness-p0p1), before JGL was
-# vendored, i.e. with the R ADMM fallback calling JGL:::flsa.general for
-# fused K > 2 and igraph for block detection in the R EM path.
+# First generated at commit 0e9694e, before JGL was vendored (with the R ADMM
+# fallback calling JGL:::flsa.general and igraph for block detection); the
+# vendored code reproduced those fits to 1e-10 (commit 6ce48bb).
+# Regenerated after the pi fixes (pi floor and convergence on pi), which
+# change the iteration counts of some first ladder steps; the final-step
+# estimates were unchanged to 1e-14.
 #
 # Run from the package root:  Rscript tests/testthat/fixtures/make-reference-fits.R
 
