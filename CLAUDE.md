@@ -35,12 +35,15 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 - `R/ssjgl.R` — Main `ssjgl()` function: EM algorithm with v0 ladder
 - `R/utils-gete.R` — `gete()`, `gete.doubly()`: E-step computation; `getmissing()`: MVN imputation
 - `R/utils-admm.R` — `admm.iters.adaptive()`: ADMM iterations with matrix-valued penalties
-- `R/jgl-vendored.R` — `penalty.as.matrix()`, `admm.iters.unconnected.S()` (from JGL 2.3.2, MIT)
+- `R/jgl-vendored.R` — `penalty.as.matrix()` (from JGL 2.3.2, MIT)
 - `R/utils-ssjgl.R` — `JGL.adaptive()`: Adapted JGL with block screening; `negloglik_Gaussian()`, `precision_to_pcor()`, `SSJGL_select_v0_cv()`, `SSJGL_final_with_pcor_CI()`, `SSJGL_CV_final_pcorCI()`
 
 ### S3 methods and helpers
 - `R/methods.R` — `print.ssjgl`, `summary.ssjgl`, `coef.ssjgl`, `fitted.ssjgl`
 - `R/helpers.R` — `extract_precision()`, `extract_adjacency()`, `extract_pcor()`, `extract_probabilities()`
+
+### Plain joint graphical lasso
+- `R/jgl.R` — `jgl()`: drop-in replacement for the archived `JGL::JGL()` (same arguments, defaults and class `"jgl"` output; no print/plot methods here, to avoid clashing with JGL's when both are loaded). Uses `admm_iters_adaptive_cpp()`; unconnected variables are solved as a diagonal-only ADMM. Checked against saved `JGL::JGL()` outputs (`data-raw/make-jgl-reference.R` → `tests/testthat/fixtures/jgl-reference.rds`, `test-jgl.R`). It does NOT share `JGL.adaptive()`, which differs from JGL on purpose (lambda0 on the diagonal, unnormalised sample-size weights, no lambda2 on the diagonal).
 
 ### Differential edges
 - `R/diff_edges.R` — `diff_edges()`: permutation (pooled null, BH) or bootstrap inference on group differences; refits via `fit$args`, optionally parallel through future.apply; `print`/`plot` methods. Edge-table columns follow multiGGMr where concepts match (`i`, `j`, `lower`, `upper`).
@@ -106,7 +109,7 @@ R CMD INSTALL .
 
 2. **Convergence criterion (fixed)**: Original used `max(diff, (theta_last[[k]] - theta[[k]])^2)` which computes element-wise squared differences. Fixed to `max(abs(...))` for consistent tolerance semantics.
 
-3. **JGL vendored (2026-10)**: JGL was archived from CRAN, so it is no longer a dependency. `R/jgl-vendored.R` holds `penalty.as.matrix()` and `admm.iters.unconnected.S()`; `src/admm_adaptive.cpp` ports flsa2, dsgl and flsa.general (`flsa_general_update()`). Attribution is in `inst/COPYRIGHTS`. igraph has also been dropped: `connected_components_cpp()` does block detection. `tests/testthat/fixtures/` holds the pre-vendoring reference fits and the JGL flsa.general outputs.
+3. **JGL vendored (2026-10)**: JGL was archived from CRAN, so it is no longer a dependency. `R/jgl-vendored.R` holds `penalty.as.matrix()`; unconnected nodes use the closed form 1/(s + lambda0/n) in both EM paths; `src/admm_adaptive.cpp` ports flsa2, dsgl and flsa.general (`flsa_general_update()`). Attribution is in `inst/COPYRIGHTS`. igraph has also been dropped: `connected_components_cpp()` does block detection. `tests/testthat/fixtures/` holds the pre-vendoring reference fits and the JGL flsa.general outputs.
 
 4. **Imputation meanj indexing (fixed)**: `ssjgl.R` line 356 used `meanj[missed[, 3]]` which indexes a (K x p) matrix with a single vector (treated as linear indexing). Fixed to `meanj[cbind(missed[, 1], missed[, 3])]` for correct group-specific mean restoration.
 

@@ -1,5 +1,6 @@
-# Numerical regression test against reference fits saved before JGL was
-# vendored (see fixtures/make-reference-fits.R).
+# Numerical regression test against saved reference fits
+# (see fixtures/make-reference-fits.R). The input data are stored with the
+# fits, so every platform fits the same data.
 
 source(test_path("fixtures", "make-reference-fits.R"), local = TRUE)
 
@@ -9,8 +10,8 @@ test_that("ssjgl() reproduces the reference fits to 1e-10", {
   cases <- reference_cases()
   expect_setequal(names(ref), names(cases))
   for (nm in names(cases)) {
-    new <- fit_reference_case(cases[[nm]])
-    old <- ref[[nm]]
+    new <- fit_reference_case(cases[[nm]], ref[[nm]]$data)
+    old <- ref[[nm]]$fit
     expect_identical(new$itrlist, old$itrlist, label = nm)
     for (i in seq_along(old$thetalist)) {
       for (k in seq_along(old$thetalist[[i]])) {

@@ -7,6 +7,10 @@
 # Regenerated after the pi fixes (pi floor and convergence on pi), which
 # change the iteration counts of some first ladder steps; the final-step
 # estimates were unchanged to 1e-14.
+# Regenerated again when unconnected nodes on the R EM path switched to the
+# closed form (as on the C++ path); the input data are now stored in the
+# fixture, because simulate_ssjgl_data() (MASS::mvrnorm, an eigendecomposition)
+# gives different data on different BLAS/LAPACK libraries.
 #
 # Run from the package root:  Rscript tests/testthat/fixtures/make-reference-fits.R
 
@@ -32,10 +36,10 @@ reference_data <- function(case) {
   Y
 }
 
-fit_reference_case <- function(case) {
+fit_reference_case <- function(case, data = reference_data(case)) {
   out <- NULL
   utils::capture.output(out <- suppressMessages(ssjgl(
-    reference_data(case), penalty = case$penalty,
+    data, penalty = case$penalty,
     lambda0 = 1, lambda1 = 0.5, lambda2 = 0.5, v0s = c(0.1, 0.03, 0.01),
     doubly = case$doubly, b = 10, impute = case$impute)))
   out[c("thetalist", "pi1list", "pi2list", "itrlist", "problist1", "penlist1",
@@ -44,6 +48,9 @@ fit_reference_case <- function(case) {
 
 if (sys.nframe() == 0L) {
   devtools::load_all(quiet = TRUE)
-  fits <- lapply(reference_cases(), fit_reference_case)
+  fits <- lapply(reference_cases(), function(case) {
+    data <- reference_data(case)
+    list(data = data, fit = fit_reference_case(case, data))
+  })
   saveRDS(fits, "tests/testthat/fixtures/reference-fits.rds", version = 2)
 }

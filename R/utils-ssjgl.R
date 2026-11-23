@@ -138,29 +138,17 @@ JGL.adaptive <-
     }
 
     ## get solution on unconnected nodes
-    # variances (including addvar, if any):
-    Su = list()
-    for(k in 1:K){Su[[k]] = diag(S[[k]])[unconnected]}
-    # penalty vectors:
-    # note: for admm.iters.unconnected, we use the penalize.diagonal argument before calling the function.  for admm.iters, we use it IN the function.
-
-    #### This works fine for scalar, vector and matrix lambda1!
-    #### if(length(lambda1)==1) { lam1.unconnected = lambda1 }
-    #### if(length(lambda1)>1) { lam1.unconnected = diag(lambda1)[unconnected] }
-    #### if(length(lambda2)==1) { lam2.unconnected = lambda2 }
-    #### if(length(lambda2)>1) { lam2.unconnected = diag(lambda2)[unconnected] }
-    # if penalize.diagonal==FALSE, then set the appropriate penalty vectors to zero:
-    #### if(!penalize.diagonal){
-    #### 	lam1.unconnected = lam1.unconnected * 0
-    #### 	if(penalty=="group") {lam2.unconnected = lam2.unconnected * 0}
-    #### }
-    # get the unconnected portion of theta:
-    lam1.unconnected <- lambda0
-
+    # With only the diagonal penalty lambda0, each unconnected node has the
+    # closed-form solution theta_kk = 1/(s_kk + lambda0/w_k), the fixed point of
+    # JGL's unconnected-node ADMM. Same formula as the C++ EM path, so the two
+    # paths agree exactly (the ADMM only approximated it to its tolerance).
     if(sum(unconnected)>0)
     {
-      theta.unconnected = admm.iters.unconnected.S(Su,lambda0=lam1.unconnected,rho=rho,weights=weights,maxiter=maxiter,tol=tol)
-      for(k in 1:K) { names(theta.unconnected[[k]])=dimnames(Y[[k]])[[2]][!connected] }
+      theta.unconnected = lapply(1:K, function(k) {
+        v <- 1 / (diag(S[[k]])[unconnected] + lambda0 / weights[k])
+        names(v) <- dimnames(Y[[k]])[[2]][!connected]
+        v
+      })
     }
     if(sum(unconnected)==0) {theta.unconnected = NULL}
 

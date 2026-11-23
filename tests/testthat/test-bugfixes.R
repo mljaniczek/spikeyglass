@@ -188,3 +188,26 @@ test_that("C++ and R EM paths agree for fused/group x doubly, K = 2", {
     expect_equal(r$itrlist, a$itrlist, label = label)
   }
 })
+
+test_that("C++ and R EM paths agree when some variables are unconnected", {
+  skip_on_cran()
+  # 6 band-graph variables plus 4 independent ones: with a large lambda1 the
+  # screening leaves some variables unconnected (singleton blocks), which
+  # both paths solve with the closed form 1/(s + lambda0/n).
+  sim <- simulate_ssjgl_data(K = 2, p = 6, n = 80, graph_type = "band", seed = 7)
+  set.seed(7)
+  Y <- lapply(sim$data_list, function(m) cbind(m, matrix(rnorm(80 * 4), 80, 4)))
+  fR <- ssjgl_R_path()
+  for (pen in c("fused", "group")) {
+    args <- list(Y = Y, penalty = pen, lambda0 = 1, lambda1 = 1, lambda2 = 1,
+                 v0s = c(0.1, 0.03, 0.01), impute = FALSE)
+    a <- suppressWarnings(do.call(quiet_fit, args))
+    r <- NULL
+    utils::capture.output(r <- suppressWarnings(suppressMessages(do.call(fR, args))))
+    n_single <- sum(!r$fitlist[[3]]$connected)
+    expect_gt(n_single, 0)
+    expect_equal(r$itrlist, a$itrlist)
+    for (k in 1:2) expect_equal(unname(r$thetalist[[3]][[k]]),
+                                unname(a$thetalist[[3]][[k]]), tolerance = 1e-12)
+  }
+})
