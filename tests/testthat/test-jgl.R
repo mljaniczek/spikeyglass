@@ -35,3 +35,13 @@ test_that("jgl() keeps variable names", {
   fit <- jgl(Y, lambda1 = 0.1, lambda2 = 0.05, return.whole.theta = TRUE)
   expect_identical(dimnames(fit$theta[[2]]), list(letters[1:5], letters[1:5]))
 })
+
+test_that("ggmtools::pcor_estimate() works on jgl() fits", {
+  sim <- simulate_ssjgl_data(K = 2, p = 6, n = 60, seed = 1)
+  Y <- lapply(sim$data_list, function(m) { colnames(m) <- letters[1:6]; m })
+  fit <- jgl(Y, lambda1 = 0.1, lambda2 = 0.05, return.whole.theta = TRUE)
+  P <- pcor_estimate(fit)
+  expect_named(P, c("Group_1", "Group_2"))
+  expect_equal(P$Group_2, precision_to_pcor(fit$theta[[2]]))
+  expect_identical(rownames(P$Group_1), letters[1:6])
+})

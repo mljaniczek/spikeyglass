@@ -8,7 +8,8 @@
   diagonal penalties, unconnected variables, whole or partial theta,
   sample-size weights, matrix penalties). Only `screening = "fast"` is
   supported. If JGL is loaded, its `print()` and `plot()` methods apply to
-  the result.
+  the result. `pcor_estimate()` (ggmtools >= 0.1.0, now required) works on
+  it.
 
 # spikeyglass 0.1.0
 

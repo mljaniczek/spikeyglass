@@ -43,7 +43,7 @@ URL: https://mljaniczek.github.io/spikeyglass/,
     https://github.com/mljaniczek/spikeyglass
 BugReports: https://github.com/mljaniczek/spikeyglass/issues
 Imports:
-    ggmtools,
+    ggmtools (>= 0.1.0),
     graphics,
     MASS,
     Rcpp,
