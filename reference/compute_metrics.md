@@ -50,7 +50,7 @@ A list with elements:
 - roc:
 
   List of K ROC objects (from
-  [`roc_auc`](https://rdrr.io/pkg/ggmtools/man/roc_auc.html)).
+  [`roc_auc`](https://mljaniczek.github.io/ggmtools/reference/roc_auc.html)).
 
 - overall:
 
@@ -74,9 +74,9 @@ m$overall
 #> [1] 0.9428105
 #> 
 #> $mean_FPR
-#> [1] 0.3452381
+#> [1] 0.3088624
 #> 
 #> $mean_AUC
-#> [1] 0.8783112
+#> [1] 0.9042151
 #> 
 ```

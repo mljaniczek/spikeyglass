@@ -3,12 +3,13 @@
 Estimates multiple related Gaussian graphical models (one precision
 matrix per group) with the Bayesian joint spike-and-slab graphical lasso
 of Li, McCormick and Clark (2019)
-[arXiv:1805.07051](https://arxiv.org/abs/1805.07051). An EM algorithm
-with spike-and-slab Laplace priors turns the fused or group graphical
-lasso into an edge-adaptive penalty, explored along a ladder of spike
-variances, and returns posterior edge inclusion probabilities. Also
-provides missing-data imputation, permutation and bootstrap tests for
-differential edges, cross-validation, and evaluation tools.
+[doi:10.48550/arXiv.1805.07051](https://doi.org/10.48550/arXiv.1805.07051)
+. An EM algorithm with spike-and-slab Laplace priors turns the fused or
+group graphical lasso into an edge-adaptive penalty, explored along a
+ladder of spike variances, and returns posterior edge inclusion
+probabilities. Also provides missing-data imputation, permutation and
+bootstrap tests for differential edges, cross-validation, and evaluation
+tools.
 
 ## See also
 

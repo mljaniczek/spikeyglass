@@ -1,5 +1,34 @@
 # Changelog
 
+## spikeyglass (development version)
+
+- New
+  [`jgl()`](https://mljaniczek.github.io/spikeyglass/reference/jgl.md):
+  the joint graphical lasso of Danaher, Wang & Witten (2014), with the
+  same arguments, defaults and return value (class `"jgl"`) as
+  `JGL::JGL()` from the JGL package, which was archived from CRAN
+  in 2025. It uses spikeyglass’s C++ ADMM and reproduces `JGL::JGL()` to
+  1e-14 on 38 saved reference fits (fused/group, K = 2 and 3, with and
+  without diagonal penalties, unconnected variables, whole or partial
+  theta, sample-size weights, matrix penalties). Only
+  `screening = "fast"` is supported. If JGL is loaded, its
+  [`print()`](https://rdrr.io/r/base/print.html) and
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) methods apply
+  to the result.
+  [`pcor_estimate()`](https://mljaniczek.github.io/ggmtools/reference/pcor_estimate.html)
+  (ggmtools \>= 0.1.0, now required) works on it.
+
+- Unconnected (singleton) variables on the R EM path (used for
+  imputation) now use the closed-form solution `1/(s + lambda0/n)`, as
+  the C++ path already did, instead of an ADMM that approximated it to
+  its tolerance. The two paths therefore agree exactly; before, they
+  differed by about 1e-9 when singletons occurred.
+
+- Tests: the reference fits now store their input data, because
+  [`simulate_ssjgl_data()`](https://mljaniczek.github.io/spikeyglass/reference/simulate_ssjgl_data.md)
+  gives different data on different BLAS/LAPACK libraries. That made the
+  cross-platform CI added in 0.1.0 fail.
+
 ## spikeyglass 0.1.0
 
 ### PIP collapse (pi handling in the EM)

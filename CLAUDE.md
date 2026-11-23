@@ -67,12 +67,11 @@ cross-group similarity (xi), giving three configurations: (0,0), (1,0),
   `getmissing()`: MVN imputation
 - `R/utils-admm.R` — `admm.iters.adaptive()`: ADMM iterations with
   matrix-valued penalties
-- `R/jgl-vendored.R` — `penalty.as.matrix()`,
-  `admm.iters.unconnected.S()` (from JGL 2.3.2, MIT)
+- `R/jgl-vendored.R` — `penalty.as.matrix()` (from JGL 2.3.2, MIT)
 - `R/utils-ssjgl.R` — `JGL.adaptive()`: Adapted JGL with block
   screening;
   [`negloglik_Gaussian()`](https://mljaniczek.github.io/spikeyglass/reference/negloglik_Gaussian.md),
-  [`precision_to_pcor()`](https://rdrr.io/pkg/ggmtools/man/precision_to_pcor.html),
+  [`precision_to_pcor()`](https://mljaniczek.github.io/ggmtools/reference/precision_to_pcor.html),
   [`SSJGL_select_v0_cv()`](https://mljaniczek.github.io/spikeyglass/reference/SSJGL_select_v0_cv.md),
   [`SSJGL_final_with_pcor_CI()`](https://mljaniczek.github.io/spikeyglass/reference/SSJGL_final_with_pcor_CI.md),
   [`SSJGL_CV_final_pcorCI()`](https://mljaniczek.github.io/spikeyglass/reference/SSJGL_CV_final_pcorCI.md)
@@ -86,6 +85,21 @@ cross-group similarity (xi), giving three configurations: (0,0), (1,0),
   [`extract_adjacency()`](https://mljaniczek.github.io/spikeyglass/reference/extract_adjacency.md),
   [`extract_pcor()`](https://mljaniczek.github.io/spikeyglass/reference/extract_pcor.md),
   [`extract_probabilities()`](https://mljaniczek.github.io/spikeyglass/reference/extract_probabilities.md)
+
+### Plain joint graphical lasso
+
+- `R/jgl.R` —
+  [`jgl()`](https://mljaniczek.github.io/spikeyglass/reference/jgl.md):
+  drop-in replacement for the archived `JGL::JGL()` (same arguments,
+  defaults and class `"jgl"` output; no print/plot methods here, to
+  avoid clashing with JGL’s when both are loaded). Uses
+  [`admm_iters_adaptive_cpp()`](https://mljaniczek.github.io/spikeyglass/reference/admm_iters_adaptive_cpp.md);
+  unconnected variables are solved as a diagonal-only ADMM. Checked
+  against saved `JGL::JGL()` outputs (`data-raw/make-jgl-reference.R` →
+  `tests/testthat/fixtures/jgl-reference.rds`, `test-jgl.R`). It does
+  NOT share `JGL.adaptive()`, which differs from JGL on purpose (lambda0
+  on the diagonal, unnormalised sample-size weights, no lambda2 on the
+  diagonal).
 
 ### Differential edges
 
@@ -101,13 +115,13 @@ cross-group similarity (xi), giving three configurations: (0,0), (1,0),
 - `R/utils-eval.R` —
   [`compute_metrics()`](https://mljaniczek.github.io/spikeyglass/reference/compute_metrics.md)
 - `R/reexports.R` — re-exports from ggmtools:
-  [`precision_to_pcor()`](https://rdrr.io/pkg/ggmtools/man/precision_to_pcor.html),
-  [`confusion_at_threshold()`](https://rdrr.io/pkg/ggmtools/man/confusion_at_threshold.html),
-  [`roc_auc()`](https://rdrr.io/pkg/ggmtools/man/roc_auc.html),
-  [`plot_roc()`](https://rdrr.io/pkg/ggmtools/man/plot_roc.html),
-  [`pip_table()`](https://rdrr.io/pkg/ggmtools/man/pip_table.html),
-  [`pcor_estimate()`](https://rdrr.io/pkg/ggmtools/man/pcor_estimate.html),
-  [`edge_index()`](https://rdrr.io/pkg/ggmtools/man/edge_index.html)
+  [`precision_to_pcor()`](https://mljaniczek.github.io/ggmtools/reference/precision_to_pcor.html),
+  [`confusion_at_threshold()`](https://mljaniczek.github.io/ggmtools/reference/confusion_at_threshold.html),
+  [`roc_auc()`](https://mljaniczek.github.io/ggmtools/reference/roc_auc.html),
+  [`plot_roc()`](https://mljaniczek.github.io/ggmtools/reference/plot_roc.html),
+  [`pip_table()`](https://mljaniczek.github.io/ggmtools/reference/pip_table.html),
+  [`pcor_estimate()`](https://mljaniczek.github.io/ggmtools/reference/pcor_estimate.html),
+  [`edge_index()`](https://mljaniczek.github.io/ggmtools/reference/edge_index.html)
 - `R/methods.R` also has
   [`pip_table.ssjgl()`](https://mljaniczek.github.io/spikeyglass/reference/ssjgl-accessors.md)
   /
@@ -189,10 +203,11 @@ R CMD INSTALL .
     consistent tolerance semantics.
 
 3.  **JGL vendored (2026-10)**: JGL was archived from CRAN, so it is no
-    longer a dependency. `R/jgl-vendored.R` holds `penalty.as.matrix()`
-    and `admm.iters.unconnected.S()`; `src/admm_adaptive.cpp` ports
-    flsa2, dsgl and flsa.general (`flsa_general_update()`). Attribution
-    is in `inst/COPYRIGHTS`. igraph has also been dropped:
+    longer a dependency. `R/jgl-vendored.R` holds `penalty.as.matrix()`;
+    unconnected nodes use the closed form 1/(s + lambda0/n) in both EM
+    paths; `src/admm_adaptive.cpp` ports flsa2, dsgl and flsa.general
+    (`flsa_general_update()`). Attribution is in `inst/COPYRIGHTS`.
+    igraph has also been dropped:
     [`connected_components_cpp()`](https://mljaniczek.github.io/spikeyglass/reference/connected_components_cpp.md)
     does block detection. `tests/testthat/fixtures/` holds the
     pre-vendoring reference fits and the JGL flsa.general outputs.
@@ -236,18 +251,18 @@ R CMD INSTALL .
 Functions shared with multiGGMr (github.com/mljaniczek/multiGGMr) live
 in **ggmtools** (github.com/mljaniczek/ggmtools; local checkout
 `../ggmtools`), and both packages re-export them: -
-[`precision_to_pcor()`](https://rdrr.io/pkg/ggmtools/man/precision_to_pcor.html),
-[`confusion_at_threshold()`](https://rdrr.io/pkg/ggmtools/man/confusion_at_threshold.html),
-[`roc_auc()`](https://rdrr.io/pkg/ggmtools/man/roc_auc.html)
+[`precision_to_pcor()`](https://mljaniczek.github.io/ggmtools/reference/precision_to_pcor.html),
+[`confusion_at_threshold()`](https://mljaniczek.github.io/ggmtools/reference/confusion_at_threshold.html),
+[`roc_auc()`](https://mljaniczek.github.io/ggmtools/reference/roc_auc.html)
 (tie-correct; returns `auc`),
-[`plot_roc()`](https://rdrr.io/pkg/ggmtools/man/plot_roc.html) -
+[`plot_roc()`](https://mljaniczek.github.io/ggmtools/reference/plot_roc.html) -
 generics
-[`pip_table()`](https://rdrr.io/pkg/ggmtools/man/pip_table.html) (long
-edge table: i, j, node1, node2, group, pip) and
-[`pcor_estimate()`](https://rdrr.io/pkg/ggmtools/man/pcor_estimate.html)
+[`pip_table()`](https://mljaniczek.github.io/ggmtools/reference/pip_table.html)
+(long edge table: i, j, node1, node2, group, pip) and
+[`pcor_estimate()`](https://mljaniczek.github.io/ggmtools/reference/pcor_estimate.html)
 (list of K pcor matrices); each package registers methods -
-[`edge_index()`](https://rdrr.io/pkg/ggmtools/man/edge_index.html) /
-`as_pip_table()` for the shared edge-table format; dataset `brca_pi3k`
+[`edge_index()`](https://mljaniczek.github.io/ggmtools/reference/edge_index.html)
+/ `as_pip_table()` for the shared edge-table format; dataset `brca_pi3k`
 
 Change shared behaviour in ggmtools, not here. Until ggmtools is on
 CRAN, DESCRIPTION has `Remotes: mljaniczek/ggmtools`.

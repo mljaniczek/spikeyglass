@@ -58,6 +58,8 @@ devtools::install_github("mljaniczek/spikeyglass")
   : Compute differential edge metrics across groups
 - [`getmetric()`](https://mljaniczek.github.io/spikeyglass/reference/getmetric.md)
   : Compute graph recovery metrics (single group)
+- [`jgl()`](https://mljaniczek.github.io/spikeyglass/reference/jgl.md) :
+  Joint graphical lasso
 - [`make_v0_ladder()`](https://mljaniczek.github.io/spikeyglass/reference/make_v0_ladder.md)
   : Generate a v0 ladder
 - [`negloglik_Gaussian()`](https://mljaniczek.github.io/spikeyglass/reference/negloglik_Gaussian.md)
