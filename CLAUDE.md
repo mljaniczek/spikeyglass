@@ -42,6 +42,9 @@ When `doubly=TRUE`, separate indicators for edge existence (delta) and cross-gro
 - `R/methods.R` — `print.ssjgl`, `summary.ssjgl`, `coef.ssjgl`, `fitted.ssjgl`
 - `R/helpers.R` — `extract_precision()`, `extract_adjacency()`, `extract_pcor()`, `extract_probabilities()`
 
+### Plain joint graphical lasso
+- `R/jgl.R` — `jgl()`: drop-in replacement for the archived `JGL::JGL()` (same arguments, defaults and class `"jgl"` output; no print/plot methods here, to avoid clashing with JGL's when both are loaded). Uses `admm_iters_adaptive_cpp()`; unconnected variables are solved as a diagonal-only ADMM. Checked against saved `JGL::JGL()` outputs (`data-raw/make-jgl-reference.R` → `tests/testthat/fixtures/jgl-reference.rds`, `test-jgl.R`). It does NOT share `JGL.adaptive()`, which differs from JGL on purpose (lambda0 on the diagonal, unnormalised sample-size weights, no lambda2 on the diagonal).
+
 ### Differential edges
 - `R/diff_edges.R` — `diff_edges()`: permutation (pooled null, BH) or bootstrap inference on group differences; refits via `fit$args`, optionally parallel through future.apply; `print`/`plot` methods. Edge-table columns follow multiGGMr where concepts match (`i`, `j`, `lower`, `upper`).
 

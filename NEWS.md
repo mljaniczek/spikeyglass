@@ -1,3 +1,15 @@
+# spikeyglass (development version)
+
+* New `jgl()`: the joint graphical lasso of Danaher, Wang & Witten (2014),
+  with the same arguments, defaults and return value (class `"jgl"`) as
+  `JGL::JGL()` from the JGL package, which was archived from CRAN in 2025.
+  It uses spikeyglass's C++ ADMM and reproduces `JGL::JGL()` to 1e-14 on
+  38 saved reference fits (fused/group, K = 2 and 3, with and without
+  diagonal penalties, unconnected variables, whole or partial theta,
+  sample-size weights, matrix penalties). Only `screening = "fast"` is
+  supported. If JGL is loaded, its `print()` and `plot()` methods apply to
+  the result.
+
 # spikeyglass 0.1.0
 
 ## PIP collapse (pi handling in the EM)
