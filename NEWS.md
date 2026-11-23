@@ -11,6 +11,16 @@
   the result. `pcor_estimate()` (ggmtools >= 0.1.0, now required) works on
   it.
 
+* Unconnected (singleton) variables on the R EM path (used for imputation)
+  now use the closed-form solution `1/(s + lambda0/n)`, as the C++ path
+  already did, instead of an ADMM that approximated it to its tolerance. The
+  two paths therefore agree exactly; before, they differed by about 1e-9
+  when singletons occurred.
+
+* Tests: the reference fits now store their input data, because
+  `simulate_ssjgl_data()` gives different data on different BLAS/LAPACK
+  libraries. That made the cross-platform CI added in 0.1.0 fail.
+
 # spikeyglass 0.1.0
 
 ## PIP collapse (pi handling in the EM)

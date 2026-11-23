@@ -40,7 +40,7 @@ Copyright 2023 Patrick Danaher. Licensed under the MIT licence:
 Files and functions:
   R/utils-ssjgl.R     JGL.adaptive()            adapted from JGL::JGL()
   R/jgl-vendored.R    penalty.as.matrix()       copied from JGL:::penalty.as.matrix
-                      admm.iters.unconnected.S() adapted from JGL:::admm.iters.unconnected
+  R/jgl.R             jgl()                     reimplements JGL::JGL()
   src/admm_adaptive.cpp
                       flsa2_update()            C++ port of JGL:::flsa2
                       flsa_general_update()     C++ port of JGL:::flsa.general
